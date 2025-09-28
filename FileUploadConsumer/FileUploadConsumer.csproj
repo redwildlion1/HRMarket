@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MassTransit" Version="8.5.3" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.3" />
+      <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Diagnostics" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Logging.EventLog" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Logging.EventSource" Version="9.0.9" />
+      <PackageReference Include="Microsoft.Extensions.Logging.TraceSource" Version="9.0.9" />
+      <PackageReference Include="nClam" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Reference Include="Microsoft.Extensions.Hosting">
+        <HintPath>..\..\..\.nuget\packages\microsoft.extensions.hosting\9.0.7\lib\net9.0\Microsoft.Extensions.Hosting.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Common\Common.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\Common\CommonSettings.json">
+        <Link>CommonSettings.json</Link>
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>
