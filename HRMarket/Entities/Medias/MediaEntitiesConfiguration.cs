@@ -47,7 +47,7 @@ public class FirmMediaConfiguration : IEntityTypeConfiguration<FirmMedia>
             .IsRequired();
         
         builder.HasOne(fm => fm.Firm)
-            .WithMany(f => f.FirmMedias)
+            .WithMany(f => f.Media)
             .HasForeignKey(fm => fm.FirmId)
             .OnDelete(DeleteBehavior.Cascade);
         

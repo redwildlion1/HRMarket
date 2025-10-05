@@ -41,9 +41,9 @@ public class EmailService(ILogger<EmailService> logger, IOptions<ZohoEmailSettin
         }
     }
 
-    private async Task EnsureConnectedAsync()
+    public async Task EnsureConnectedAsync()
     {
-        if (_smtpClient == null || !_smtpClient.IsConnected || 
+        if (_smtpClient is not { IsConnected: true } || 
             DateTime.UtcNow - _lastUsed > _connectionTimeout)
         {
             await DisconnectAsync();

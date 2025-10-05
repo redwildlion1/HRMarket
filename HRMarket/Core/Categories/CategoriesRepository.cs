@@ -1,3 +1,4 @@
+using HRMarket.Entities;
 using HRMarket.Entities.Categories;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,12 +11,17 @@ public interface ICategoriesRepository
     Task AddService(Service service);
     Task<ICollection<Cluster>> GetFullClusters();
     Task<ICollection<Category>> GetCategoriesWithoutCluster();
+    Task AddCategoryToCluster(Guid categoryId, Guid clusterId);
 }
 
-public class CategoriesRepository(DbContext context) : ICategoriesRepository
+public class CategoriesRepository(ApplicationDbContext context) : ICategoriesRepository
 {
     public async Task AddCluster(Cluster cluster)
     {
+        // Make the order of the new cluster the last one of the active clusters + 1
+        var maxOrder = await context.Set<Cluster>().MaxAsync(c => (int?)c.OrderInList) ?? 0;
+        cluster.OrderInList = maxOrder + 1;
+        
         await context.Set<Cluster>().AddAsync(cluster);
         await context.SaveChangesAsync();
     }
@@ -46,5 +52,14 @@ public class CategoriesRepository(DbContext context) : ICategoriesRepository
             .Where(c => c.ClusterId == null)
             .Include(c => c.Services)
             .ToListAsync();
+    }
+
+    public Task AddCategoryToCluster(Guid categoryId, Guid clusterId)
+    {
+        var category = context.Set<Category>().FirstOrDefault(c => c.Id == categoryId);
+        if (category == null)
+            throw new Exception("Category not found");
+        category.ClusterId = clusterId;
+        return context.SaveChangesAsync();
     }
 }

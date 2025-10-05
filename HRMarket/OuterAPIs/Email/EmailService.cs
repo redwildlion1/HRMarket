@@ -7,7 +7,6 @@ public interface IEmailService
     Task SendConfirmationEmail(string toEmail, string confirmationLink);
 }
 
-// This is a Kafka producer that sends email messages to a Kafka topic
 public class EmailService(EmailProducer emailProducer) : IEmailService
 {
     public async Task SendConfirmationEmail(string toEmail, string confirmationLink)

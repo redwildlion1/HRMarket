@@ -5,4 +5,5 @@ namespace EmailConsumer.Services;
 public interface IEmailService
 {
     Task SendEmailAsync(EmailMessage emailMessage);
+    Task EnsureConnectedAsync();
 }

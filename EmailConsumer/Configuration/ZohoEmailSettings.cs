@@ -8,5 +8,5 @@ public class ZohoEmailSettings
     public required string Password { get; init; }
     public required string FromEmail { get; init; }
     public required string FromName { get; init; }
-    public bool EnableSsl { get; init; } = true;
+    public bool EnableTls { get; init; } = true;
 }

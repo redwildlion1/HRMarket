@@ -1,8 +1,9 @@
-using AutoMapper;
 using HRMarket.Core.Answers;
 using HRMarket.Core.Firms.DTOs;
 using HRMarket.Entities.Answers;
 using HRMarket.Entities.Firms;
+using HRMarket.Validation.Extensions;
+using Mapster;
 
 namespace HRMarket.Core.Firms;
 
@@ -12,29 +13,13 @@ public interface IFirmService
 }
 
 public class FirmService(
-    IMapper mapper,
     IFirmRepository repository,
-    IAnswerService answerService) : IFirmService
+    EntityValidator validator) : IFirmService
 {
     public async Task<Guid> CreateAsync(CreateFirmDTO dto)
     {
-        var firm = await CreateFirmEntityAsync(dto);
+        var firm = dto.Adapt<Firm>();
+        await validator.ValidateAndThrowAsync(firm, firm.Contact, firm.Links, firm.Location);
         return await repository.AddAsync(firm);
-    }
-
-    private async Task<Firm> CreateFirmEntityAsync(CreateFirmDTO dto)
-    {
-        var firm = mapper.Map<Firm>(dto);
-
-        var answers = dto.Form.Answers;
-        var answersResult = await answerService.CheckAnswersAsync(answers);
-
-        firm.FormSubmission = new FormSubmission()
-        {
-            IsCompleted = answersResult.IsComplete,
-            Answers = mapper.Map<ICollection<Answer>>(answers)
-        };
-        
-        return firm;
     }
 }

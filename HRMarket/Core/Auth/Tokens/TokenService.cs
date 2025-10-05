@@ -29,7 +29,7 @@ public class TokenService(ITokenRepository tokenRepository, TokenSettings settin
         if (firm != null)
         {
             claims.Add(new Claim("FirmId", firm.Id.ToString()));
-            claims.Add(new Claim("FirmName", firm.FirmName));
+            claims.Add(new Claim("FirmName", firm.Name));
         }
     
         var expires = DateTime.UtcNow.AddMinutes(settings.JwtExpiryMinutes);

@@ -1,3 +1,4 @@
+using HRMarket.Entities;
 using HRMarket.Entities.Questions;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +10,7 @@ public interface IQuestionRepository
     public Task<ICollection<Question>> GetByIdsAsync(IEnumerable<Guid> questionsIds);
 }
 
-public class QuestionRepository(DbContext context) : IQuestionRepository
+public class QuestionRepository(ApplicationDbContext context) : IQuestionRepository
 {
     public async Task<ICollection<Question>> AddQuestions(ICollection<Question> questions)
     {

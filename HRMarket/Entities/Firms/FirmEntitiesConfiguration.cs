@@ -39,11 +39,11 @@ public class FirmConfiguration : IEntityTypeConfiguration<Firm>
         builder.HasIndex(f => f.Cui)
             .IsUnique();
         
-        builder.Property(f => f.FirmName)
+        builder.Property(f => f.Name)
             .IsRequired()
             .HasMaxLength(AppConstants.MaxCompanyNameLength);
         
-        builder.Property(f => f.FirmType)
+        builder.Property(f => f.Type)
             .IsRequired();
            
         builder.Property(f => f.Description)

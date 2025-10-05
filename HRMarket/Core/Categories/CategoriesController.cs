@@ -40,6 +40,13 @@ public class CategoriesController(ICategoryService service) : ControllerBase
         return Ok();
     }
     
+    [HttpPost("addCategoryToCluster")]
+    public async Task<IActionResult> AddCategoryToCluster(AddCategoryToClusterDTO dto)
+    {
+        await service.AddCategoryToCluster(dto);
+        return Ok();
+    }
+    
     [HttpGet("clusters")]
     public async Task<IActionResult> GetFullClusters()
     {

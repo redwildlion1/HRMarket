@@ -1,15 +1,27 @@
 using System.Text;
+using Amazon.S3;
+using Common.AWS;
 using Common.Email;
 using Common.Media;
+using FluentValidation;
+using HRMarket.Configuration.Exceptions;
 using HRMarket.Core.Answers;
 using HRMarket.Core.Auth;
 using HRMarket.Core.Auth.Tokens;
 using HRMarket.Core.Categories;
 using HRMarket.Core.Firms;
+using HRMarket.Core.Firms.DTOs;
 using HRMarket.Core.Media;
 using HRMarket.Core.Questions;
 using HRMarket.Entities;
 using HRMarket.Entities.Auth;
+using HRMarket.Middleware;
+using HRMarket.OuterAPIs.Email;
+using HRMarket.OuterAPIs.Media;
+using HRMarket.Validation;
+using HRMarket.Validation.Extensions;
+using Mapster;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +35,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-builder.Services.AddControllers();
+// In Program.cs or Startup.cs
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidateModelFilter>();
+});
+
 builder.Services.AddEndpointsApiExplorer();
 
 //Swagger UI 
@@ -54,6 +71,9 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+var sharedConfigPath = Path.Combine(builder.Environment.ContentRootPath, "..", "Common", "CommonSettings.json");
+builder.Configuration.AddJsonFile(sharedConfigPath, optional: false, reloadOnChange: true);
+
 // Token Services
 builder.Services.AddScoped<ITokenRepository, TokenRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -79,7 +99,24 @@ builder.Services.AddScoped<IFirmRepository, FirmRepository>();
 builder.Services.AddScoped<IMediaService, MediaService>();
 builder.Services.AddScoped<IFileUploadBuilderFactory, FileUploadBuilderFactory>();
 builder.Services.AddScoped<IMediaStorageRepo, S3MediaStorageRepo>();
+builder.Services.AddScoped<AwsConfigurator>();
+builder.Services.AddScoped<IMediaProducer, MediaProducer>();
+
 // AWS S3 Configuration
+builder.Services.Configure<AwsSettings>(
+    builder.Configuration.GetSection(AwsSettings.Section));
+var awsSettings = builder.Configuration.GetSection(AwsSettings.Section).Get<AwsSettings>()
+                  ?? throw new Exception("AWS settings are not configured properly.");
+builder.Services.AddSingleton(awsSettings);
+
+builder.Services.AddScoped<IAmazonS3>(sp =>
+{
+    var credentials = new Amazon.Runtime.BasicAWSCredentials(
+        awsSettings.AccessKey, awsSettings.SecretKey);
+    var region = Amazon.RegionEndpoint.GetBySystemName(awsSettings.Region);
+    return new AmazonS3Client(credentials, region);
+});
+
 
 // Question Services
 builder.Services.AddScoped<IQuestionService, QuestionService>();
@@ -90,11 +127,50 @@ builder.Services.Configure<EmailQueueSettings>(
     builder.Configuration.GetSection(EmailQueueSettings.SectionName));
 builder.Services.AddSingleton<EmailQueueSettings>(sp =>
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailQueueSettings>>().Value);
+// Email Services
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<EmailProducer>();
+
+// Entitty Framework Validator
+builder.Services.AddScoped<EntityValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateFirmDTOValidator>();
+
+// Exception Handler
+builder.Services.AddSingleton<ISpecialExceptionsHandler, SpecialExceptionsHandler>();
+
+TypeAdapterConfig.GlobalSettings.Default
+    .PreserveReference(true) // optional: avoid circular refs
+    .ShallowCopyForSameType(true)
+    .EnableNonPublicMembers(true)
+    .IgnoreNullValues(true)
+    .MapToConstructor(true)
+    .Unflattening(true);
+
+FirmMapperConfig.Configure();
 
 // Authentication and Authorization - JWT Configuration
 var tokenSettings = builder.Configuration.GetSection(TokenSettings.SectionName)
                        .Get<TokenSettings>()
                    ?? throw new Exception("Token settings are not configured properly.");
+
+builder.Services.AddMassTransit(x =>
+{
+    // Configure RabbitMQ
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        var emailSettings = builder.Configuration.GetSection(EmailQueueSettings.SectionName).Get<EmailQueueSettings>();
+
+        if (emailSettings == null) throw new InvalidOperationException("EmailSettings section is missing in configuration.");
+        
+        cfg.Host(emailSettings.Host, h =>
+        {
+            h.Username(emailSettings.Username);
+            h.Password(emailSettings.Password);
+        });
+        
+    });
+});
+
 
 builder.Services.AddAuthentication(options =>
     {
@@ -157,5 +233,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 
 app.Run();

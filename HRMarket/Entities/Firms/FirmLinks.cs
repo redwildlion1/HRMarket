@@ -8,6 +8,14 @@ public class FirmLinks
     public string? Twitter { get; set; }
     public string? Instagram { get; set; }
     
+
     public Guid FirmId { get; set; }
-    public Firm Firm { get; set; } = null!;
+
+    public Firm? Firm { get; set; }
+    
+    public FirmLinks()
+    {
+    }
+    
+    
 }

@@ -13,8 +13,8 @@ public class Firm
     [StringLength(AppConstants.CuiLength)]
     public required string Cui { get; set; }
     [StringLength(AppConstants.MaxCompanyNameLength)]
-    public required string FirmName { get; init; }
-    public required FirmType FirmType { get; init; }
+    public required string Name { get; init; }
+    public required FirmType Type { get; init; }
     public required string Description { get; set; }
     public List<Guid> CategoryIds { get; set; } = [];
     public List<Category>? Categories { get; set; }
@@ -23,5 +23,5 @@ public class Firm
     public FirmContact? Contact { get; set; }
     public FirmLinks? Links { get; set; }
     public FirmLocation? Location { get; set; }
-    public List<FirmMedia>? FirmMedias { get; set; }
+    public List<FirmMedia>? Media { get; set; }
 }

@@ -22,8 +22,13 @@ public class LocationElementsController(ApplicationDbContext dbContext) : Contro
             dbContext.SaveChanges();
         }
         using var reader = new StreamReader(file.OpenReadStream());
-        using var csv = new CsvHelper.CsvReader(reader, System.Globalization.CultureInfo.InvariantCulture);
+        var config = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+        {
+            Delimiter = ";"
+        };
+        using var csv = new CsvHelper.CsvReader(reader, config);
         var records = csv.GetRecords<CountyCsvRecord>().ToList();
+
         foreach (var record in records.Where(record => !dbContext.Counties.Any(c => c.Name == record.DENJ)))
         {
             dbContext.Counties.Add(new Entities.LocationElements.County
@@ -35,6 +40,26 @@ public class LocationElementsController(ApplicationDbContext dbContext) : Contro
         dbContext.SaveChanges();
         return Ok();
     }
+    
+    [HttpGet("api/location-elements/countries")]
+    public IActionResult GetCountries()
+    {
+        var countries = dbContext.Countries
+            .Select(c => new { c.Id, c.Name })
+            .ToList();
+        return Ok(countries);
+    }
+    
+    [HttpGet("api/location-elements/{countryId:int}/counties")]
+    public IActionResult GetLocationElements(int countryId)
+    {
+        var counties = dbContext.Counties
+            .Where(c => c.CountryId == countryId)
+            .Select(c => new { c.Id, c.Name })
+            .ToList();
+        return Ok(counties);
+    }
+    
     
     private class CountyCsvRecord
     {

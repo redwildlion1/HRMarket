@@ -1,23 +1,28 @@
 namespace HRMarket.Core.Firms.DTOs;
 
-public class CreateFirmDTO(
-    string cui,
-    string firmName,
-    string firmType,
-    string description,
-    FirmContactDTO contact,
-    FirmLinksDTO links,
-    FirmLocationDTO location,
-    List<Guid> categoryIds,
-    FormDTO form) 
+public class CreateFirmDTO
 {
-    public string Cui { get; set; } = cui;
-    public string FirmName { get; set; } = firmName;
-    public string FirmType { get; set; } = firmType;
-    public string Description { get; set; } = description;
-    public FirmContactDTO Contact { get; set; } = contact;
-    public FirmLinksDTO Links { get; set; } = links;
-    public FirmLocationDTO Location { get; set; } = location;
-    public List<Guid> CategoryIds { get; set; } = categoryIds;
-    public FormDTO Form { get; set; } = form;
+    public required string Cui { get; set; }
+    public required string Name { get; set; }
+    public required string Type { get; set; }
+    public string? Description { get; set; }
+
+    // Contact properties
+    public required string ContactEmail { get; set; }
+    public string? ContactPhone { get; set; } 
+
+    // Links properties
+    public string? LinksWebsite { get; set; }
+    public string? LinksLinkedIn { get; set; }
+    public string? LinksFacebook { get; set; }
+    public string? LinksTwitter { get; set; }
+    public string? LinksInstagram { get; set; }
+
+    // Location properties
+    public string? LocationAddress { get; set; }
+    public int LocationCountryId { get; set; }
+    public int LocationCountyId { get; set; }
+    public required string LocationCity { get; set; }
+    public string? LocationPostalCode { get; set; }
+    
 }

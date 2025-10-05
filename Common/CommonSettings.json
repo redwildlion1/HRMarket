@@ -4,5 +4,14 @@
     "Password": "L@urentiu2003",
     "Host": "localhost",
     "QueueName": "email_queue"
+  },
+  "AwsSettings": {
+    "AccessKey": "AKIAQH7AEFUTIUR572HH",
+    "TempBucketArn": "arn:aws:s3:::hrmarket-temp",
+    "TempBucketName": "hrmarket-temp",
+    "PermanentBucketArn": "arn:aws:s3:::hrmarket-permanent",
+    "PermanentBucketName": "hrmarket-permanent",
+    "Region": "eu-central-1",
+    "SecretKey": "unqZ1+05yqW7/ScwAbal317AKx6F4jOa9OT7yJmA"
   }
 }

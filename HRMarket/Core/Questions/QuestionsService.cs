@@ -1,7 +1,7 @@
-using AutoMapper;
 using HRMarket.Configuration.UniversalExtensions;
 using HRMarket.Core.Questions.DTOs;
 using Json.Schema;
+using Mapster;
 
 namespace HRMarket.Core.Questions;
 
@@ -10,7 +10,7 @@ public interface IQuestionService
     public Task CreateForCategoryAsync(CreateQuestionsForCategoryDTO dto);
 }
 
-public class QuestionService(IQuestionRepository repository, IMapper mapper)
+public class QuestionService(IQuestionRepository repository)
     : IQuestionService
 {
     public Task CreateForCategoryAsync(CreateQuestionsForCategoryDTO dto)
@@ -29,7 +29,7 @@ public class QuestionService(IQuestionRepository repository, IMapper mapper)
             // If the JSON is invalid, an exception will be thrown
             JsonSchema.FromText(question.ValidationJson);
         
-        var questions = mapper.Map<ICollection<Entities.Questions.Question>>(dto.Questions);
+        var questions = dto.Questions.Adapt<List<Entities.Questions.Question>>();
         
         // Set the CategoryId for each question
         foreach (var question in questions)

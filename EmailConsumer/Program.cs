@@ -48,4 +48,12 @@ builder.Services.AddMassTransit(x =>
 });
 
 var host = builder.Build();
+
+using (var scope = host.Services.CreateScope())
+{
+    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+    await emailService.EnsureConnectedAsync();
+}
+
+
 await host.RunAsync();
