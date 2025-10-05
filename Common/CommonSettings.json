@@ -6,7 +6,7 @@
     "QueueName": "email_queue"
   },
   "AwsSettings": {
-    "AccessKey": "AKIAQH7AEFUTIUR572HH",
+    "AccessKey": "AKIAQH7AEcoxFUTboxIUR572HH",
     "TempBucketArn": "arn:aws:s3:::hrmarket-temp",
     "TempBucketName": "hrmarket-temp",
     "PermanentBucketArn": "arn:aws:s3:::hrmarket-permanent",
