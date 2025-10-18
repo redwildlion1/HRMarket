@@ -1,7 +1,7 @@
 namespace HRMarket.Core.Categories.DTOs;
 
-public record PostClusterDTO(string Name, string Icon);
-public record PostCategoryDTO(string Name, string Icon, int? OrderCluster = null, Guid? ClusterId = null);
-public record PostServiceDTO(string Name, int OrderInCategory , Guid CategoryId);
+public record PostClusterDto(string Name, string Icon);
+public record PostCategoryDto(string Name, string Icon, int? OrderCluster = null, Guid? ClusterId = null);
+public record PostServiceDto(string Name, int OrderInCategory , Guid CategoryId);
 
-public record AddCategoryToClusterDTO(Guid CategoryId, Guid ClusterId);
+public record AddCategoryToClusterDto(Guid CategoryId, Guid ClusterId);

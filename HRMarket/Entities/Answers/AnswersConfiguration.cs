@@ -53,3 +53,28 @@ public class AnswersConfiguration : IEntityTypeConfiguration<Answer>
                 });
     }
 }
+
+public class AnswerVariantConfiguration : IEntityTypeConfiguration<AnswerVariant>
+{
+    public void Configure(EntityTypeBuilder<AnswerVariant> builder)
+    {
+        builder.HasKey(av => av.Id);
+        builder.Property(av => av.Id).HasDefaultValueSql("uuid_generate_v4())");
+        
+        builder.Property(av => av.Value)
+            .IsRequired()
+            .HasMaxLength(255);
+        
+        builder.Property(av => av.AnswerId)
+            .IsRequired();
+        
+        builder.Property(av => av.LanguageId) 
+            .IsRequired()
+            .HasMaxLength(10);
+        
+        builder.HasOne(av => av.Answer)
+            .WithMany(a => a.Variants)
+            .HasForeignKey(av => av.AnswerId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}

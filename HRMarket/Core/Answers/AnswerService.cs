@@ -7,12 +7,12 @@ namespace HRMarket.Core.Answers;
 
 public interface IAnswerService
 {
-    Task<CheckAnswersResult> CheckAnswersAsync(List<AnswerDTO> answers);
+    Task<CheckAnswersResult> CheckAnswersAsync(List<AnswerDto> answers);
 }
 
 public class AnswerService(IQuestionRepository questionRepository) : IAnswerService
 {
-    public async Task<CheckAnswersResult> CheckAnswersAsync(List<AnswerDTO> answers)
+    public async Task<CheckAnswersResult> CheckAnswersAsync(List<AnswerDto> answers)
     {
         var questionsIds = answers
             .Select(a => a.QuestionId)
@@ -32,15 +32,15 @@ public class AnswerService(IQuestionRepository questionRepository) : IAnswerServ
 
             switch (answer)
             {
-                case BasicAnswerDTO basic:
+                case BasicAnswerDto basic:
                     ValidateBasicAnswer(basic, question);
                     break;
 
-                case SingleChoiceAnswerDTO single:
+                case SingleChoiceAnswerDto single:
                     ValidateSingleChoiceAnswer(single, question);
                     break;
 
-                case MultiChoiceAnswerDTO multi:
+                case MultiChoiceAnswerDto multi:
                     ValidateMultiChoiceAnswer(multi, question);
                     break;
 
@@ -52,21 +52,25 @@ public class AnswerService(IQuestionRepository questionRepository) : IAnswerServ
         return result;
     }
 
-    private static void ValidateBasicAnswer(BasicAnswerDTO answer, Question question)
+    private static void ValidateBasicAnswer(BasicAnswerDto answer, Question question)
     {
         // Validate the response type
         QuestionTypeExtensions.IsValidValueByTypeString(
             question.Type.ToString(), answer.Response);
 
         // Validate against the JSON schema if provided
-        if (string.IsNullOrEmpty(question.ValidationJson)) return;
-        var schema = JsonSchema.FromText(question.ValidationJson);
+        if (question.ValidationJson == null) return;
+        var schemaText = question.ValidationJson.RootElement.GetRawText();
+        if (string.IsNullOrWhiteSpace(schemaText) || schemaText == "null") return;
+
+        var schema = JsonSchema.FromText(schemaText);
         var evaluationResults = schema.Evaluate(answer.Response);
         if (!evaluationResults.IsValid)
             throw new ArgumentException("Answer does not conform to the question's schema.");
     }
 
-    private static void ValidateSingleChoiceAnswer(SingleChoiceAnswerDTO answer, Question question)
+
+    private static void ValidateSingleChoiceAnswer(SingleChoiceAnswerDto answer, Question question)
     {
         if (question.Type != QuestionType.SingleSelect)
             throw new ArgumentException("Question type does not match SingleSelect answer.");
@@ -76,7 +80,7 @@ public class AnswerService(IQuestionRepository questionRepository) : IAnswerServ
             throw new ArgumentException($"Selected option ID {answer.SelectedOption} is not valid for this question.");
     }
 
-    private static void ValidateMultiChoiceAnswer(MultiChoiceAnswerDTO answer, Question question)
+    private static void ValidateMultiChoiceAnswer(MultiChoiceAnswerDto answer, Question question)
     {
         if (question.Type != QuestionType.MultiSelect)
             throw new ArgumentException("Question type does not match MultiSelect answer.");

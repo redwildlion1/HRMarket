@@ -68,3 +68,49 @@ public class OptionConfiguration : IEntityTypeConfiguration<Option>
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+public class QuestionVariantConfiguration : IEntityTypeConfiguration<QuestionVariant>
+{
+    public void Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<QuestionVariant> builder)
+    {
+        builder.HasKey(qv => qv.Id);
+        builder.Property(qv => qv.Id).ValueGeneratedOnAdd();
+
+        builder.Property(qv => qv.Value)
+            .IsRequired()
+            .HasMaxLength(AppConstants.MaxQuestionTitleLength);
+
+        builder.HasOne(qv => qv.Question)
+            .WithMany(q => q.Variants)
+            .HasForeignKey(qv => qv.QuestionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(qv => qv.Language)
+            .WithMany()
+            .HasForeignKey(qv => qv.LanguageId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public class OptionVariantConfiguration : IEntityTypeConfiguration<OptionVariant>
+{
+    public void Configure(Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<OptionVariant> builder)
+    {
+        builder.HasKey(ov => ov.Id);
+        builder.Property(ov => ov.Id).ValueGeneratedOnAdd();
+
+        builder.Property(ov => ov.Value)
+            .IsRequired()
+            .HasMaxLength(AppConstants.MaxOptionTextLength);
+
+        builder.HasOne(ov => ov.Option)
+            .WithMany(o => o.Variants)
+            .HasForeignKey(ov => ov.OptionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(ov => ov.Language)
+            .WithMany()
+            .HasForeignKey(ov => ov.LanguageId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}

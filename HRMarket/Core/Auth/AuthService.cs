@@ -1,24 +1,30 @@
+using System.ComponentModel.DataAnnotations;
 using HRMarket.Core.Auth.Tokens;
 using HRMarket.Entities.Auth;
 using HRMarket.OuterAPIs.Email;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.IdentityModel.JsonWebTokens;
+using ValidationException = FluentValidation.ValidationException;
 
 namespace HRMarket.Core.Auth;
 
 public interface IAuthService
 {
-    Task Register(RegisterDTO dto);
+    Task Register(RegisterDto dto);
     Task<LoginResult> Login(LoginRequest request);
     Task<LoginResult> RefreshToken(RefreshTokenRequest request);
     Task ConfirmEmail(Guid userId, string token);
 }
 
-public class AuthService(UserManager<User> userManager, IEmailService emailService,ITokenService tokenService, IConfiguration configuration)
+public class AuthService(
+    UserManager<User> userManager, 
+    IEmailService emailService,
+    ITokenService tokenService, 
+    IConfiguration configuration)
     : IAuthService
 {
-    public async Task Register(RegisterDTO dto)
+    public async Task Register(RegisterDto dto)
     {
         var user = new User
         {
@@ -31,8 +37,11 @@ public class AuthService(UserManager<User> userManager, IEmailService emailServi
         if (!result.Succeeded)
         {
             var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            throw new Exception($"User creation failed: {errors}");
+            throw new ValidationException(errors);
         }
+
+        // Assign default User role
+        await userManager.AddToRoleAsync(user, "User");
 
         var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
         var confirmationLink = $"{configuration["AppSettings:FrontendUrl"]}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
@@ -59,10 +68,10 @@ public class AuthService(UserManager<User> userManager, IEmailService emailServi
             throw new Exception("Email not confirmed. Please check your inbox.");
         }
 
-        // Generate JWT and Refresh Token 
-        var jwtToken = tokenService.GenerateJwtToken(user);
-        // Also save the refresh token in the database or a persistent store
+        // Generate JWT (now with roles) and Refresh Token 
+        var jwtToken = await tokenService.GenerateJwtTokenAsync(user);
         var refreshToken = await tokenService.GenerateRefreshToken(user.Id);
+        
         return new LoginResult(jwtToken.Value, refreshToken.Value, jwtToken.Expires, refreshToken.Expires);
     }
 
@@ -89,12 +98,13 @@ public class AuthService(UserManager<User> userManager, IEmailService emailServi
             throw new Exception("Invalid refresh token.");
         }
 
-        // Generate new JWT and Refresh Token
-        var newJwtToken = tokenService.GenerateJwtToken(user);
+        // Generate new JWT (with roles) and Refresh Token
+        var newJwtToken = await tokenService.GenerateJwtTokenAsync(user);
         var newRefreshToken = await tokenService.GenerateRefreshToken(user.Id);
 
         // Invalidate the old refresh token
         await tokenService.InvalidateRefreshTokenAsync(user.Id, request.RefreshToken);
+        
         return new LoginResult(newJwtToken.Value, newRefreshToken.Value, newJwtToken.Expires, newRefreshToken.Expires);
     }
     

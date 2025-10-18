@@ -7,17 +7,18 @@ namespace HRMarket.Core.Questions;
 
 public interface IQuestionService
 {
-    public Task CreateForCategoryAsync(CreateQuestionsForCategoryDTO dto);
+    public Task CreateForCategoryAsync(CreateQuestionsForCategoryDto dto);
 }
 
 public class QuestionService(IQuestionRepository repository)
     : IQuestionService
 {
-    public Task CreateForCategoryAsync(CreateQuestionsForCategoryDTO dto)
+    public Task CreateForCategoryAsync(CreateQuestionsForCategoryDto dto)
     {
         // This will also check for duplicate orders or missing orders
         dto.Questions.CheckOrderedList();
         
+        /*
         var choiceQuestions = dto.Questions
             .OfType<PostOptionQuestionDTO>();
         foreach (var question in choiceQuestions)
@@ -28,6 +29,7 @@ public class QuestionService(IQuestionRepository repository)
         foreach (var question in basicQuestions)
             // If the JSON is invalid, an exception will be thrown
             JsonSchema.FromText(question.ValidationJson);
+            */
         
         var questions = dto.Questions.Adapt<List<Entities.Questions.Question>>();
         

@@ -35,6 +35,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         // Configure User entity
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.ApplyConfiguration(new RoleConfiguration());
         
         // Apply configurations for firm entities
         modelBuilder.ApplyConfiguration(new Firms.FirmConfiguration());

@@ -1,78 +1,67 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using HRMarket.Configuration.Types;
 using HRMarket.Configuration.UniversalExtensions;
 
 namespace HRMarket.Core.Questions.DTOs;
 
-public class CreateQuestionsForCategoryDTO(Guid categoryId, List<PostQuestionDTO> questions)
+public class CreateQuestionsForCategoryDto(Guid categoryId, List<PostQuestionDto> questions)
 {
     public Guid CategoryId { get; } = categoryId;
-    public List<PostQuestionDTO> Questions { get; } = questions;
+    public List<PostQuestionDto> Questions { get; } = questions;
 }
 
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-[JsonDerivedType(typeof(PostBasicQuestionDTO), nameof(QuestionType.String))]
-[JsonDerivedType(typeof(PostBasicQuestionDTO), nameof(QuestionType.Text))]
-[JsonDerivedType(typeof(PostBasicQuestionDTO), nameof(QuestionType.Number))]
-[JsonDerivedType(typeof(PostBasicQuestionDTO), nameof(QuestionType.Date))]
-[JsonDerivedType(typeof(PostOptionQuestionDTO), nameof(QuestionType.SingleSelect))]
-[JsonDerivedType(typeof(PostOptionQuestionDTO), nameof(QuestionType.MultiSelect))]
-public abstract class PostQuestionDTO : IOrderable
+
+public class PostQuestionDto : IOrderable
 {
     public int Order { get; set; }
     public string Title { get; set; }
     public string Type { get; set; }
     public bool IsRequired { get; set; }
     public bool IsFilter { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ValidationJson { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<PostOptionDto>? Options { get; set; }
+    public List<PostQuestionVariantDto>? Variants { get; set; }
 
-    protected PostQuestionDTO(
+    public PostQuestionDto(
         string title,
         string type,
         bool isRequired,
         int order,
-        bool isFilter)
+        bool isFilter,
+        string? validationJson = null,
+        List<PostOptionDto>? options = null)
     {
         Title = title;
         Type = type;
         IsRequired = isRequired;
         Order = order;
         IsFilter = isFilter;
-    }
-}
-
-
-public class PostBasicQuestionDTO : PostQuestionDTO
-{
-    public PostBasicQuestionDTO(string title,
-        string type,
-        bool isRequired,
-        int order,
-        bool isFilter,
-        string validationJson) : base(title, type, isRequired, order, isFilter)
-    {
         ValidationJson = validationJson;
-    }
-
-    public string ValidationJson { get; set; }
-}
-
-public class PostOptionQuestionDTO : PostQuestionDTO
-{
-    public PostOptionQuestionDTO(string title,
-        string type,
-        bool isRequired,
-        int order,
-        bool isFilter,
-        List<PostOptionDTO> options) : base(title, type, isRequired, order, isFilter)
-    {
         Options = options;
     }
-
-    public List<PostOptionDTO> Options { get; set; }
 }
 
-public class PostOptionDTO(string text, int order) : IOrderable
+public class PostQuestionVariantDto(string languageId, string title)
+{
+    public string LanguageId { get; set; } = languageId;
+    public string Title { get; set; } = title;
+}
+
+
+public class PostOptionDto(string text, int order, List<PostOptionVariantDto> variants) : IOrderable
 {
     public string Text { get; set; } = text;
     public int Order { get; set; } = order;
+    public List<PostOptionVariantDto>? Variants { get; set; } = variants;
 }
+
+public class PostOptionVariantDto(string languageId, string value)
+{
+    public string LanguageId { get; set; } = languageId;
+    public string Value { get; set; } = value;
+}
+    
+    

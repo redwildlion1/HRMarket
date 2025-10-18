@@ -2,7 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace HRMarket.OuterAPIs.StripeApi;
+namespace HRMarket.Core.StripeApi;
 
 [ApiController]
 [Route("api/subscriptions")]
@@ -12,7 +12,7 @@ public class SubscriptionController(
     : ControllerBase
 {
     [HttpGet("plans")]
-    public async Task<ActionResult<List<SubscriptionPlanDTO>>> GetPlans()
+    public async Task<ActionResult<List<SubscriptionPlanDto>>> GetPlans()
     {
         var plans = await subscriptionService.GetAllPlansAsync();
         return Ok(plans);
@@ -20,8 +20,8 @@ public class SubscriptionController(
 
     [HttpPost("plans")]
     [Authorize(Roles = "Admin")]
-    public async Task<ActionResult<SubscriptionPlanDTO>> CreatePlan(
-        [FromBody] CreateSubscriptionPlanDTO dto)
+    public async Task<ActionResult<SubscriptionPlanDto>> CreatePlan(
+        [FromBody] CreateSubscriptionPlanDto dto)
     {
         var plan = await subscriptionService.CreatePlanAsync(dto);
         return CreatedAtAction(nameof(GetPlans), new { id = plan.Id }, plan);
@@ -30,7 +30,7 @@ public class SubscriptionController(
     [HttpPost("checkout")]
     [Authorize]
     public async Task<ActionResult<CheckoutSessionResponse>> CreateCheckoutSession(
-        [FromBody] CreateCheckoutSessionDTO dto)
+        [FromBody] CreateCheckoutSessionDto dto)
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var firmId = Guid.Parse(User.FindFirstValue("FirmId")!);
@@ -44,7 +44,7 @@ public class SubscriptionController(
 
     [HttpGet("firms/{firmId:guid}/status")]
     [Authorize]
-    public async Task<ActionResult<SubscriptionStatusDTO>> GetFirmSubscriptionStatus(Guid firmId)
+    public async Task<ActionResult<SubscriptionStatusDto>> GetFirmSubscriptionStatus(Guid firmId)
     {
         var userFirmId = Guid.Parse(User.FindFirstValue("FirmId")!);
         if (firmId != userFirmId)
@@ -55,24 +55,5 @@ public class SubscriptionController(
             return NotFound();
 
         return Ok(status);
-    }
-
-    [HttpPost("webhook")]
-    [AllowAnonymous]
-    public async Task<IActionResult> HandleWebhook()
-    {
-        var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
-        var signature = Request.Headers["Stripe-Signature"].ToString();
-
-        try
-        {
-            await subscriptionService.HandleStripeWebhookAsync(json, signature);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Webhook handling failed");
-            return BadRequest();
-        }
     }
 }

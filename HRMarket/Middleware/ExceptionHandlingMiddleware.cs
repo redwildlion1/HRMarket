@@ -1,92 +1,116 @@
-using System.Security;
 using System.Text.Json;
-using FluentValidation;
+using System.Text.Json.Serialization;
 using HRMarket.Configuration.Exceptions;
-using Npgsql;
 
 namespace HRMarket.Middleware;
 
-public class ExceptionHandlingMiddleware(
-    RequestDelegate next,
-    ILogger<ExceptionHandlingMiddleware> logger,
-    ISpecialExceptionsHandler specialExceptionsHandler)
+/// <summary>
+/// Global exception handling middleware that catches all unhandled exceptions
+/// and converts them to standardized problem details responses
+/// </summary>
+public class ExceptionHandlingMiddleware
 {
-    private readonly Dictionary<Type, Func<Exception, HttpContext, Task>> _specialExceptionHandlersDictionary = new()
-    {
-        /*{ typeof(AddInvoiceException), specialExceptionsHandler.HandleAddInvoiceToDatabaseException },
-        { typeof(StripeException), specialExceptionsHandler.HandleStripeException },*/
-        { typeof(PostgresException), specialExceptionsHandler.HandlePostgresException }
-    };
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly IExceptionMapper _exceptionMapper;
+    private readonly IEnumerable<ISpecialExceptionHandler> _specialHandlers;
+    private readonly JsonSerializerOptions _jsonOptions;
 
-    public async Task Invoke(HttpContext context)
+    public ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger,
+        IExceptionMapper exceptionMapper,
+        IEnumerable<ISpecialExceptionHandler> specialHandlers)
+    {
+        _next = next;
+        _logger = logger;
+        _exceptionMapper = exceptionMapper;
+        _specialHandlers = specialHandlers.OrderBy(h => h.Order);
+
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            WriteIndented = false
+        };
+    }
+
+    public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            await next(context);
+            await _next(context);
         }
         catch (Exception ex)
         {
-            if (_specialExceptionHandlersDictionary.TryGetValue(ex.GetType(), out var specialHandler))
-            {
-                await specialHandler(ex, context);
-                return;
-            }
-
-            await HandleNormalException(ex, context);
+            await HandleExceptionAsync(context, ex);
         }
     }
 
-    private Task HandleNormalException(Exception ex, HttpContext context)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        var statusCode = ex switch
+        // Prevent writing to response if it has already started
+        if (context.Response.HasStarted)
         {
-            BadHttpRequestException or ArgumentException => StatusCodes.Status400BadRequest,
-            UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
-            SecurityException => StatusCodes.Status403Forbidden,
-            ValidationException => StatusCodes.Status400BadRequest,
-            NotFoundException => StatusCodes.Status404NotFound,
-            _ => StatusCodes.Status500InternalServerError
-        };
+            _logger.LogWarning(
+                "Cannot write exception response, response has already started for {Path}",
+                context.Request.Path);
+            return;
+        }
 
-        if (statusCode >= 500)
-            logger.LogError(ex, "Unhandled server exception occurred");
-
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = statusCode;
-
-        var problem = new ProblemDetails
+        try
         {
-            Title = ex.Message,
-            Errors = ex is ValidationException validationException
-                ? validationException.Errors.Select(e => e.ErrorMessage).ToList()
-                : [],
-            Status = statusCode
-        };
+            // Try special handlers first
+            foreach (var handler in _specialHandlers)
+            {
+                if (!handler.CanHandle(exception)) continue;
+                var (statusCode, problemDetails) = await handler.HandleAsync(exception, context);
+                await WriteResponseAsync(context, statusCode, problemDetails);
+                return;
+            }
 
-        var json = JsonSerializer.Serialize(problem);
-        return context.Response.WriteAsync(json);
+            // Fall back to standard exception mapping
+            var (code, details) = _exceptionMapper.MapException(exception, context);
+            await WriteResponseAsync(context, code, details);
+        }
+        catch (Exception handlerException)
+        {
+            // If we fail to handle the exception, log it and try to send a generic error
+            _logger.LogError(handlerException,
+                "Failed to handle exception in middleware for {Path}",
+                context.Request.Path);
+
+            await WriteGenericErrorAsync(context);
+        }
     }
 
-    public static Task WriteResponse(HttpContext context, int statusCode, string message, List<string>? errors = null)
+    public async Task WriteResponseAsync(HttpContext context, int statusCode, ProblemDetails problemDetails)
     {
-        context.Response.ContentType = "application/json";
+        context.Response.Clear();
         context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
 
-        var problem = new ProblemDetails
+        var json = JsonSerializer.Serialize(problemDetails, _jsonOptions);
+        await context.Response.WriteAsync(json);
+    }
+
+    private async Task WriteGenericErrorAsync(HttpContext context)
+    {
+        if (context.Response.HasStarted)
+            return;
+
+        var problemDetails = new ProblemDetails
         {
-            Title = message,
-            Errors = errors ?? [],
-            Status = statusCode
+            Title = "An error occurred while processing your request",
+            Status = StatusCodes.Status500InternalServerError,
+            TraceId = context.TraceIdentifier
         };
 
-        var json = JsonSerializer.Serialize(problem);
-        return context.Response.WriteAsync(json);
-    }
-}
+        context.Response.Clear();
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
 
-public class ProblemDetails
-{
-    public string Title { get; set; } = string.Empty;
-    public List<string> Errors { get; set; } = [];
-    public int Status { get; set; }
+        var json = JsonSerializer.Serialize(problemDetails, _jsonOptions);
+        await context.Response.WriteAsync(json);
+    }
 }

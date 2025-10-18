@@ -2,11 +2,11 @@ using Swashbuckle.AspNetCore.Filters;
 
 namespace HRMarket.Core.Auth.Examples;
 
-public class RegisterExample : IExamplesProvider<RegisterDTO>
+public class RegisterExample : IExamplesProvider<RegisterDto>
 {
-    public RegisterDTO GetExamples()
+    public RegisterDto GetExamples()
     {
-        return new RegisterDTO(
+        return new RegisterDto(
             Email: "contact@thinkr.ro",
             Password: "StrongPassword123!",
             Newsletter: true

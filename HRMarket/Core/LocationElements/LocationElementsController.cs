@@ -3,9 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HRMarket.Core.LocationElements;
 
+[Route("api/location-elements")]
 public class LocationElementsController(ApplicationDbContext dbContext) : ControllerBase
 {
-    [HttpPost("api/location-elements/counties")]
+    [HttpPost("counties")]
     public IActionResult CreateCounty(IFormFile file, string country)
     {
         //Take a CSV file and a country name, create the country if it doesn't exist, then create the counties from the CSV file
@@ -14,6 +15,7 @@ public class LocationElementsController(ApplicationDbContext dbContext) : Contro
         {
             return BadRequest("File must be a CSV file");
         }
+
         var existingCountry = dbContext.Countries.FirstOrDefault(c => c.Name == country);
         if (existingCountry == null)
         {
@@ -21,6 +23,7 @@ public class LocationElementsController(ApplicationDbContext dbContext) : Contro
             dbContext.Countries.Add(existingCountry);
             dbContext.SaveChanges();
         }
+
         using var reader = new StreamReader(file.OpenReadStream());
         var config = new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
         {
@@ -29,19 +32,20 @@ public class LocationElementsController(ApplicationDbContext dbContext) : Contro
         using var csv = new CsvHelper.CsvReader(reader, config);
         var records = csv.GetRecords<CountyCsvRecord>().ToList();
 
-        foreach (var record in records.Where(record => !dbContext.Counties.Any(c => c.Name == record.DENJ)))
+        foreach (var record in records.Where(record => !dbContext.Counties.Any(c => c.Name == record.Denj)))
         {
             dbContext.Counties.Add(new Entities.LocationElements.County
             {
-                Name = record.DENJ,
+                Name = record.Denj,
                 CountryId = existingCountry.Id
             });
         }
+
         dbContext.SaveChanges();
         return Ok();
     }
-    
-    [HttpGet("api/location-elements/countries")]
+
+    [HttpGet("countries")]
     public IActionResult GetCountries()
     {
         var countries = dbContext.Countries
@@ -49,8 +53,8 @@ public class LocationElementsController(ApplicationDbContext dbContext) : Contro
             .ToList();
         return Ok(countries);
     }
-    
-    [HttpGet("api/location-elements/{countryId:int}/counties")]
+
+    [HttpGet("{countryId:int}/counties")]
     public IActionResult GetLocationElements(int countryId)
     {
         var counties = dbContext.Counties
@@ -59,10 +63,10 @@ public class LocationElementsController(ApplicationDbContext dbContext) : Contro
             .ToList();
         return Ok(counties);
     }
-    
-    
+
+
     private class CountyCsvRecord
     {
-        public string DENJ { get; set; } = null!;
+        public string Denj { get; set; } = null!;
     }
 }

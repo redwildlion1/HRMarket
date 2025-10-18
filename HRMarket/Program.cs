@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using Amazon.S3;
 using Common.AWS;
@@ -58,7 +59,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Identity Configuration
-builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
+builder.Services.AddIdentity<User, Role>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequireDigit = true;
@@ -133,10 +134,10 @@ builder.Services.AddScoped<EmailProducer>();
 
 // Entitty Framework Validator
 builder.Services.AddScoped<EntityValidator>();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateFirmDTOValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateFirmDtoValidator>();
 
 // Exception Handler
-builder.Services.AddSingleton<ISpecialExceptionsHandler, SpecialExceptionsHandler>();
+builder.Services.AddExceptionHandling();
 
 TypeAdapterConfig.GlobalSettings.Default
     .PreserveReference(true) // optional: avoid circular refs
@@ -191,7 +192,9 @@ builder.Services.AddAuthentication(options =>
                 ClockSkew = TimeSpan.FromMinutes(1),
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(tokenSettings.SecretKey))
+                    Encoding.UTF8.GetBytes(tokenSettings.SecretKey)),
+                RoleClaimType = ClaimTypes.Role,
+                NameClaimType = ClaimTypes.NameIdentifier
             };
             options.Events = new JwtBearerEvents
             {
@@ -206,6 +209,16 @@ builder.Services.AddAuthentication(options =>
             };
         }
     );
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
 
 builder.Services.AddAuthorization();
 
@@ -231,10 +244,11 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCors("AllowAll");
 
 app.MapControllers();
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseExceptionHandling();
 
 
 app.Run();

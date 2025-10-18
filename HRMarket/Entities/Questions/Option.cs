@@ -16,4 +16,5 @@ public class Option
     public bool IsActive { get; set; } = true;
     
     public ICollection<Answer>? Answers { get; set; } = [];
+    public ICollection<OptionVariant> Variants { get; set; } = [];
 }

@@ -2,7 +2,7 @@ using HRMarket.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace HRMarket.OuterAPIs.StripeApi;
+namespace HRMarket.Entities.Stripe;
 
 public class SubscriptionPlanConfiguration : IEntityTypeConfiguration<SubscriptionPlan>
 {

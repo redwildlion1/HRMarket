@@ -1,7 +1,7 @@
 {
   "EmailQueueSettings": {
-    "Username": "admin",
-    "Password": "L@urentiu2003",
+    "Username": "guest",
+    "Password": "guest",
     "Host": "localhost",
     "QueueName": "email_queue"
   },

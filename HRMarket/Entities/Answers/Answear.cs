@@ -21,4 +21,5 @@ public class Answer
     public FormSubmission? FormSubmission { get; set; }
 
     public ICollection<Option>? SelectedOptions { get; set; } = [];
+    public ICollection<AnswerVariant> Variants { get; set; } = [];
 }

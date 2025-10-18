@@ -4,9 +4,9 @@ using HRMarket.Core.Firms.DTOs;
 
 namespace HRMarket.Validation;
 
-public class CreateFirmDTOValidator : AbstractValidator<CreateFirmDTO>
+public class CreateFirmDtoValidator : AbstractValidator<CreateFirmDto>
 {
-    public CreateFirmDTOValidator()
+    public CreateFirmDtoValidator()
     {
         RuleFor(x => x.Type)
             .Must(type => Enum.IsDefined(typeof(FirmType), type))

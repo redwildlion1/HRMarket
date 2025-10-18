@@ -9,14 +9,14 @@ namespace HRMarket.Core.Firms;
 
 public interface IFirmService
 {
-    Task<Guid> CreateAsync(CreateFirmDTO dto);
+    Task<Guid> CreateAsync(CreateFirmDto dto);
 }
 
 public class FirmService(
     IFirmRepository repository,
     EntityValidator validator) : IFirmService
 {
-    public async Task<Guid> CreateAsync(CreateFirmDTO dto)
+    public async Task<Guid> CreateAsync(CreateFirmDto dto)
     {
         var firm = dto.Adapt<Firm>();
         await validator.ValidateAndThrowAsync(firm, firm.Contact, firm.Links, firm.Location);

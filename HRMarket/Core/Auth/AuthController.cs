@@ -6,14 +6,14 @@ using Swashbuckle.AspNetCore.Filters;
 
 namespace HRMarket.Core.Auth;
 
+[ApiController]
+[Route("api/auth")]
 public class AuthController(IAuthService authService) : ControllerBase
 {
     [HttpPost("register")]
-    [SwaggerRequestExample(typeof(RegisterDTO), typeof(RegisterExample))]
-    public async Task<IActionResult> Register([FromBody]RegisterDTO dto)
+    [SwaggerRequestExample(typeof(RegisterDto), typeof(RegisterExample))]
+    public async Task<IActionResult> Register([FromBody]RegisterDto dto)
     {
-        var validator = new RegisterValidator();
-        await validator.ValidateAndThrowAsync(dto);
         await authService.Register(dto);
         return Ok();
     }

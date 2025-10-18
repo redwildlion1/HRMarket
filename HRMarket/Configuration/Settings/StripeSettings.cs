@@ -1,4 +1,4 @@
-namespace HRMarket.OuterAPIs.StripeApi;
+namespace HRMarket.Configuration.Settings;
 
 public class StripeSettings
 {

@@ -66,6 +66,7 @@ public class CheckConstraintsDb(ApplicationDbContext context)
             {
                 var propInfo = typeof(TEntity).GetProperty(property.Name);
                 var value = propInfo?.GetValue(entity);
+                // ReSharper disable once EntityFramework.ClientSideDbFunctionCall
                 dbSet = dbSet.Where(e => EF.Property<object>(e, property.Name) == value);
             }
 
@@ -78,6 +79,7 @@ public class CheckConstraintsDb(ApplicationDbContext context)
                     var pkValue = typeof(TEntity).GetProperty(pkProp.Name)?.GetValue(entity);
                     if (pkValue != null)
                     {
+                        // ReSharper disable once EntityFramework.ClientSideDbFunctionCall
                         dbSet = dbSet.Where(e => EF.Property<object>(e, pkProp.Name) != pkValue);
                     }
                 }

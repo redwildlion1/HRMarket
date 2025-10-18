@@ -8,7 +8,7 @@ public class FirmMapperConfig
 {
     public static void Configure()
     {
-        TypeAdapterConfig<CreateFirmDTO, Firm>
+        TypeAdapterConfig<CreateFirmDto, Firm>
             .NewConfig()
             .Map(dest => dest.Type, src => Enum.Parse<FirmType>(src.Type, true))
             .Map(dest => dest.Contact, src => new FirmContact
