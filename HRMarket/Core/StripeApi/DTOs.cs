@@ -1,46 +1,76 @@
+// HRMarket/Core/StripeApi/DTOs.cs
+
 using HRMarket.Configuration.Status;
 using HRMarket.Entities.Stripe;
 
 namespace HRMarket.Core.StripeApi;
 
-public record SubscriptionPlanDto(
-    Guid Id,
-    string Name,
-    string Description,
-    decimal PriceMonthly,
-    decimal PriceYearly,
-    string StripePriceIdMonthly,
-    string StripePriceIdYearly,
-    bool IsPopular,
-    List<string> Features
-);
+public class SubscriptionPlanDto(
+    Guid id,
+    string name,
+    string description,
+    decimal priceMonthly,
+    decimal priceYearly,
+    string stripePriceIdMonthly,
+    string stripePriceIdYearly,
+    bool isPopular,
+    List<string> features
+)
+{
+    public Guid Id { get; } = id;
+    public string Name { get; } = name;
+    public string Description { get; } = description;
+    public decimal PriceMonthly { get; } = priceMonthly;
+    public decimal PriceYearly { get; } = priceYearly;
+    public string StripePriceIdMonthly { get; } = stripePriceIdMonthly;
+    public string StripePriceIdYearly { get; } = stripePriceIdYearly;
+    public bool IsPopular { get; } = isPopular;
+    public List<string> Features { get; } = features;
+}
 
-public record CreateSubscriptionPlanDto(
-    string Name,
-    string Description,
-    decimal PriceMonthly,
-    decimal PriceYearly,
-    List<string> Features,
-    bool IsPopular = false
-);
+public class CreateSubscriptionPlanDto(
+    string name,
+    string description,
+    decimal priceMonthly,
+    decimal priceYearly,
+    List<string> features,
+    bool isPopular = false
+) : BaseDto
+{
+    public string Name { get; } = name;
+    public string Description { get; } = description;
+    public decimal PriceMonthly { get; } = priceMonthly;
+    public decimal PriceYearly { get; } = priceYearly;
+    public List<string> Features { get; } = features;
+    public bool IsPopular { get; } = isPopular;
+}
 
-public record CreateCheckoutSessionDto(
-    Guid FirmId,
-    string PriceId,
-    bool IsYearly
-);
+public class CreateCheckoutSessionDto(
+    Guid firmId,
+    string priceId,
+    bool isYearly
+) : BaseDto
+{
+    public Guid FirmId { get; } = firmId;
+    public string PriceId { get; } = priceId;
+    public bool IsYearly { get; } = isYearly;
+}
 
-public record CheckoutSessionResponse(
-    string SessionId,
-    string PublishableKey
-);
+public class CheckoutSessionResponse(
+    string sessionId,
+    string publishableKey
+) : BaseDto
+{
+    public string SessionId { get; } = sessionId;
+    public string PublishableKey { get; } = publishableKey;
+}
 
-public record SubscriptionStatusDto(
-    Guid SubscriptionId,
-    SubscriptionStatus Status,
-    DateTime CurrentPeriodEnd,
-    bool IsYearly,
-    SubscriptionPlanDto Plan
+public class SubscriptionStatusDto(
+    Guid subscriptionId,
+    SubscriptionStatus status,
+    DateTime currentPeriodEnd,
+    bool isYearly,
+    SubscriptionPlanDto plan
 );
 
 public static class SubscriptionStatusExtensions

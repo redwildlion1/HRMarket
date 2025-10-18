@@ -1,3 +1,4 @@
+// HRMarket/Core/Answers/AnswerDTOs.cs
 using System.Text.Json.Serialization;
 using HRMarket.Configuration.Types;
 
@@ -10,9 +11,13 @@ namespace HRMarket.Core.Answers;
 [JsonDerivedType(typeof(BasicAnswerDto), nameof(QuestionType.Date))]
 [JsonDerivedType(typeof(SingleChoiceAnswerDto), nameof(QuestionType.SingleSelect))]
 [JsonDerivedType(typeof(MultiChoiceAnswerDto), nameof(QuestionType.MultiSelect))]
-public abstract class AnswerDto
+public abstract class AnswerDto : BaseDto
 {
     public Guid QuestionId { get; set; }
+
+    protected AnswerDto()
+    {
+    }
 
     protected AnswerDto(Guid questionId)
     {
@@ -20,10 +25,13 @@ public abstract class AnswerDto
     }
 }
 
-// for String, Text, Number, Date
 public class BasicAnswerDto : AnswerDto
 {
-    public string Response { get; set; }
+    public string Response { get; set; } = string.Empty;
+
+    public BasicAnswerDto()
+    {
+    }
 
     public BasicAnswerDto(Guid questionId, string response) 
         : base(questionId)
@@ -32,10 +40,13 @@ public class BasicAnswerDto : AnswerDto
     }
 }
 
-// for SingleSelect
 public class SingleChoiceAnswerDto : AnswerDto
 {
     public Guid SelectedOption { get; set; }
+
+    public SingleChoiceAnswerDto()
+    {
+    }
 
     public SingleChoiceAnswerDto(Guid questionId, Guid selectedOption)
         : base(questionId)
@@ -44,10 +55,13 @@ public class SingleChoiceAnswerDto : AnswerDto
     }
 }
 
-// for MultiSelect
 public class MultiChoiceAnswerDto : AnswerDto
 {
-    public ICollection<Guid> SelectedOptions { get; set; }
+    public ICollection<Guid> SelectedOptions { get; set; } = new List<Guid>();
+
+    public MultiChoiceAnswerDto()
+    {
+    }
 
     public MultiChoiceAnswerDto(Guid questionId, ICollection<Guid> selectedOptions)
         : base(questionId)
@@ -56,7 +70,6 @@ public class MultiChoiceAnswerDto : AnswerDto
     }
 }
 
-// result object
 public class CheckAnswersResult
 {
     public bool IsComplete { get; set; }

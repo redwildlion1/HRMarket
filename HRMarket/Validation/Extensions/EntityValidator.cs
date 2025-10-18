@@ -1,51 +1,72 @@
-using System.ComponentModel.DataAnnotations;
-using HRMarket.Entities;
+using FluentValidation;
+using HRMarket.Core;
 
 namespace HRMarket.Validation.Extensions;
 
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-public class EntityValidator(ApplicationDbContext context)
+public class EntityValidator(CheckConstraintsDb checker)
 {
-    private readonly CheckConstraintsDb _checker = new(context);
-
     /// <summary>
-    /// Validate entity and throw a user-friendly exception if constraints fail.
+    /// Validate entity and throw FluentValidation exception if constraints fail.
+    /// Uses language from DTO if it inherits from BaseDto.
     /// </summary>
     public async Task ValidateAndThrowAsync<TEntity>(TEntity entity)
         where TEntity : class
     {
-        var errors = await _checker.ValidateEntityAsync(entity);
+        var language = GetLanguageFromDto(entity);
+        var errors = await checker.ValidateEntityAsync(entity, language);
 
         if (errors.Count > 0)
         {
-            throw new ValidationException(string.Join("\n", errors));
+            ThrowValidationException(errors);
         }
     }
 
     /// <summary>
-    ///  Validate entity and nested entities, throwing a user-friendly exception if constraints fail.
+    /// Validate entity and nested entities, throwing FluentValidation exception if constraints fail.
+    /// Uses language from the main DTO.
     /// </summary>
-    /// <param name="entity"></param>
-    /// <param name="nestedEntities"></param>
-    /// <typeparam name="TEntity"></typeparam>
-    /// <exception cref="ValidationException"></exception>
     public async Task ValidateAndThrowAsync<TEntity>(TEntity entity, params object?[] nestedEntities)
         where TEntity : class
     {
-        var errors = await _checker.ValidateEntityAsync(entity);
+        var language = GetLanguageFromDto(entity);
+        var allErrors = await checker.ValidateEntityAsync(entity, language);
 
-        foreach (var nested in nestedEntities)
+        foreach (var nested in nestedEntities.Where(n => n != null))
         {
-            var nestedErrors = await _checker.ValidateEntityAsync(nested);
-            errors.AddRange(nestedErrors);
+            var nestedErrors = await checker.ValidateEntityAsync(nested, language);
+            foreach (var (key, value) in nestedErrors)
+            {
+                if (!allErrors.ContainsKey(key))
+                {
+                    allErrors[key] = [];
+                }
+                allErrors[key].AddRange(value);
+            }
         }
 
-        if (errors.Count > 0)
+        if (allErrors.Count > 0)
         {
-            throw new ValidationException(string.Join("\n", errors));
+            ThrowValidationException(allErrors);
         }
+    }
+
+    private static string GetLanguageFromDto(object? obj)
+    {
+        // Try to get language from BaseDto
+        if (obj is BaseDto dto)
+        {
+            return string.IsNullOrWhiteSpace(dto.Language) ? "ro" : dto.Language.ToLower();
+        }
+
+        return "ro"; // Default to Romanian
+    }
+
+    private static void ThrowValidationException(Dictionary<string, List<string>> errors)
+    {
+        var validationFailures = errors.SelectMany(kvp =>
+            kvp.Value.Select(errorMessage => new FluentValidation.Results.ValidationFailure(kvp.Key, errorMessage))
+        ).ToList();
+
+        throw new ValidationException(validationFailures);
     }
 }

@@ -5,7 +5,7 @@ using HRMarket.Configuration.UniversalExtensions;
 
 namespace HRMarket.Core.Questions.DTOs;
 
-public class CreateQuestionsForCategoryDto(Guid categoryId, List<PostQuestionDto> questions)
+public class CreateQuestionsForCategoryDto(Guid categoryId, List<PostQuestionDto> questions) : BaseDto
 {
     public Guid CategoryId { get; } = categoryId;
     public List<PostQuestionDto> Questions { get; } = questions;

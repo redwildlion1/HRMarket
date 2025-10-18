@@ -1,6 +1,6 @@
 namespace HRMarket.Core.Firms.DTOs;
 
-public class CreateFirmDto
+public class CreateFirmDto : BaseDto
 {
     public required string Cui { get; set; }
     public required string Name { get; set; }

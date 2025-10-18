@@ -11,15 +11,8 @@ public interface IExceptionMapper
     (int statusCode, ProblemDetails problemDetails) MapException(Exception exception, HttpContext context);
 }
 
-public class ExceptionMapper : IExceptionMapper
+public class ExceptionMapper(ILogger<ExceptionMapper> logger) : IExceptionMapper
 {
-    private readonly ILogger<ExceptionMapper> _logger;
-
-    public ExceptionMapper(ILogger<ExceptionMapper> logger)
-    {
-        _logger = logger;
-    }
-
     public (int statusCode, ProblemDetails problemDetails) MapException(Exception exception, HttpContext context)
     {
         var traceId = context.TraceIdentifier;
@@ -41,14 +34,15 @@ public class ExceptionMapper : IExceptionMapper
         HttpContext context, 
         string traceId)
     {
-        _logger.LogWarning(exception, "Validation failed for request {Method} {Path}", 
+        logger.LogWarning(exception, "Validation failed for request {Method} {Path}", 
             context.Request.Method, context.Request.Path);
 
+        // Group validation errors by property name (field name)
         var validationErrors = exception.Errors
             .GroupBy(e => e.PropertyName)
             .ToDictionary(
-                g => ToCamelCase(g.Key),
-                g => g.Select(e => e.ErrorMessage).ToList()
+                g => ToCamelCase(g.Key), // Convert property name to camelCase
+                g => g.Select(e => e.ErrorMessage).ToList() // All error messages for this field
             );
 
         var problemDetails = new ProblemDetails
@@ -58,7 +52,7 @@ public class ExceptionMapper : IExceptionMapper
             Status = StatusCodes.Status400BadRequest,
             Instance = context.Request.Path,
             TraceId = traceId,
-            ValidationErrors = validationErrors
+            ValidationErrors = validationErrors // This contains field -> errors mapping
         };
 
         return (StatusCodes.Status400BadRequest, problemDetails);
@@ -69,7 +63,7 @@ public class ExceptionMapper : IExceptionMapper
         HttpContext context, 
         string traceId)
     {
-        _logger.LogWarning(exception, "Resource not found for request {Method} {Path}", 
+        logger.LogWarning(exception, "Resource not found for request {Method} {Path}", 
             context.Request.Method, context.Request.Path);
 
         var problemDetails = new ProblemDetails
@@ -89,7 +83,7 @@ public class ExceptionMapper : IExceptionMapper
         HttpContext context, 
         string traceId)
     {
-        _logger.LogWarning(exception, "Unauthorized access attempt for request {Method} {Path}", 
+        logger.LogWarning(exception, "Unauthorized access attempt for request {Method} {Path}", 
             context.Request.Method, context.Request.Path);
 
         var problemDetails = new ProblemDetails
@@ -109,7 +103,7 @@ public class ExceptionMapper : IExceptionMapper
         HttpContext context, 
         string traceId)
     {
-        _logger.LogWarning(exception, "Access forbidden for request {Method} {Path}", 
+        logger.LogWarning(exception, "Access forbidden for request {Method} {Path}", 
             context.Request.Method, context.Request.Path);
 
         var problemDetails = new ProblemDetails
@@ -129,7 +123,7 @@ public class ExceptionMapper : IExceptionMapper
         HttpContext context, 
         string traceId)
     {
-        _logger.LogWarning(exception, "Bad request for {Method} {Path}", 
+        logger.LogWarning(exception, "Bad request for {Method} {Path}", 
             context.Request.Method, context.Request.Path);
 
         var problemDetails = new ProblemDetails
@@ -139,7 +133,7 @@ public class ExceptionMapper : IExceptionMapper
             Status = StatusCodes.Status400BadRequest,
             Instance = context.Request.Path,
             TraceId = traceId,
-            Errors = new List<string> { exception.Message }
+            Errors = [exception.Message]
         };
 
         return (StatusCodes.Status400BadRequest, problemDetails);
@@ -150,7 +144,7 @@ public class ExceptionMapper : IExceptionMapper
         HttpContext context, 
         string traceId)
     {
-        _logger.LogWarning(exception, "Invalid argument for request {Method} {Path}", 
+        logger.LogWarning(exception, "Invalid argument for request {Method} {Path}", 
             context.Request.Method, context.Request.Path);
 
         var problemDetails = new ProblemDetails
@@ -171,7 +165,7 @@ public class ExceptionMapper : IExceptionMapper
         HttpContext context, 
         string traceId)
     {
-        _logger.LogError(exception, "Unhandled exception occurred for request {Method} {Path}", 
+        logger.LogError(exception, "Unhandled exception occurred for request {Method} {Path}", 
             context.Request.Method, context.Request.Path);
 
         var problemDetails = new ProblemDetails
@@ -191,6 +185,6 @@ public class ExceptionMapper : IExceptionMapper
         if (string.IsNullOrEmpty(str) || char.IsLower(str[0]))
             return str;
 
-        return char.ToLowerInvariant(str[0]) + str.Substring(1);
+        return char.ToLowerInvariant(str[0]) + str[1..];
     }
 }

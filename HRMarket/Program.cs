@@ -21,6 +21,7 @@ using HRMarket.OuterAPIs.Email;
 using HRMarket.OuterAPIs.Media;
 using HRMarket.Validation;
 using HRMarket.Validation.Extensions;
+using HRMarket.Validation.FirmValidators;
 using Mapster;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
