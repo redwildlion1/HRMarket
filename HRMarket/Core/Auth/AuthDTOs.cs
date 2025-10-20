@@ -23,3 +23,9 @@ public class RefreshTokenRequest(string token, string refreshToken) : BaseDto
     public string Token { get; set; } = token;
     public string RefreshToken { get; set; } = refreshToken;
 };
+
+public class ConfirmEmailRequest(Guid userId, string token) : BaseDto
+{
+    public Guid UserId { get; set; } = userId;
+    public string Token { get; set; } = token;
+};

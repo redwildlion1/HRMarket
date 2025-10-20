@@ -77,5 +77,29 @@ public static class ValidationErrorKeys
         public const string PasswordRequiresLowercase = "Validation.Auth.PasswordRequiresLowercase";
         public const string PasswordRequiresUppercase = "Validation.Auth.PasswordRequiresUppercase";
         public const string PasswordRequiresNonAlphanumeric = "Validation.Auth.PasswordRequiresNonAlphanumeric";
+        
+        // Identity-specific errors
+        public const string DuplicateEmail = "Validation.Auth.DuplicateEmail";
+        public const string DuplicateUserName = "Validation.Auth.DuplicateUserName";
+        public const string InvalidEmail = "Validation.Auth.InvalidEmail";
+        public const string InvalidUserName = "Validation.Auth.InvalidUserName";
+        public const string InvalidToken = "Validation.Auth.InvalidToken";
+        public const string UserNotFound = "Validation.Auth.UserNotFound";
+        public const string UserAlreadyHasPassword = "Validation.Auth.UserAlreadyHasPassword";
+        public const string UserLockoutNotEnabled = "Validation.Auth.UserLockoutNotEnabled";
+        public const string UserAlreadyInRole = "Validation.Auth.UserAlreadyInRole";
+        public const string UserNotInRole = "Validation.Auth.UserNotInRole";
+        public const string PasswordMismatch = "Validation.Auth.PasswordMismatch";
+        public const string DefaultError = "Validation.Auth.DefaultError";
+        public const string ConcurrencyFailure = "Validation.Auth.ConcurrencyFailure";
+        public const string LoginAlreadyAssociated = "Validation.Auth.LoginAlreadyAssociated";
+        public const string InvalidRoleName = "Validation.Auth.InvalidRoleName";
+        public const string DuplicateRoleName = "Validation.Auth.DuplicateRoleName";
+        public const string RecoveryCodeRedemptionFailed = "Validation.Auth.RecoveryCodeRedemptionFailed";
+        
+        // Custom auth errors
+        public const string InvalidCredentials = "Validation.Auth.InvalidCredentials";
+        public const string EmailNotConfirmed = "Validation.Auth.EmailNotConfirmed";
+        public const string InvalidRefreshToken = "Validation.Auth.InvalidRefreshToken";
     }
 }

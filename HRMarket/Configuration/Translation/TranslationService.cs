@@ -118,6 +118,30 @@ public class TranslationService : ITranslationService
             [ValidationErrorKeys.Auth.PasswordRequiresUppercase] = "Parola trebuie să conțină cel puțin o literă mare.",
             [ValidationErrorKeys.Auth.PasswordRequiresNonAlphanumeric] =
                 "Parola trebuie să conțină cel puțin un caracter special.",
+            
+            // Identity-specific errors
+            [ValidationErrorKeys.Auth.DuplicateEmail] = "Adresa de email este deja înregistrată.",
+            [ValidationErrorKeys.Auth.DuplicateUserName] = "Numele de utilizator este deja folosit.",
+            [ValidationErrorKeys.Auth.InvalidEmail] = "Adresa de email nu este validă.",
+            [ValidationErrorKeys.Auth.InvalidUserName] = "Numele de utilizator nu este valid.",
+            [ValidationErrorKeys.Auth.InvalidToken] = "Token-ul de securitate nu este valid.",
+            [ValidationErrorKeys.Auth.UserNotFound] = "Utilizatorul nu a fost găsit.",
+            [ValidationErrorKeys.Auth.UserAlreadyHasPassword] = "Utilizatorul are deja o parolă setată.",
+            [ValidationErrorKeys.Auth.UserLockoutNotEnabled] = "Blocarea contului nu este activată pentru acest utilizator.",
+            [ValidationErrorKeys.Auth.UserAlreadyInRole] = "Utilizatorul este deja în acest rol.",
+            [ValidationErrorKeys.Auth.UserNotInRole] = "Utilizatorul nu este în acest rol.",
+            [ValidationErrorKeys.Auth.PasswordMismatch] = "Parola este incorectă.",
+            [ValidationErrorKeys.Auth.DefaultError] = "A apărut o eroare. Vă rugăm să încercați din nou.",
+            [ValidationErrorKeys.Auth.ConcurrencyFailure] = "Eroare de concurență. Vă rugăm să reîncărcați și să încercați din nou.",
+            [ValidationErrorKeys.Auth.LoginAlreadyAssociated] = "Acest login este deja asociat cu alt cont.",
+            [ValidationErrorKeys.Auth.InvalidRoleName] = "Numele rolului nu este valid.",
+            [ValidationErrorKeys.Auth.DuplicateRoleName] = "Numele rolului este deja folosit.",
+            [ValidationErrorKeys.Auth.RecoveryCodeRedemptionFailed] = "Codul de recuperare nu este valid.",
+            
+            // Custom auth errors
+            [ValidationErrorKeys.Auth.InvalidCredentials] = "Email sau parolă invalidă.",
+            [ValidationErrorKeys.Auth.EmailNotConfirmed] = "Email-ul nu a fost confirmat. Vă rugăm să verificați căsuța de email.",
+            [ValidationErrorKeys.Auth.InvalidRefreshToken] = "Token-ul de reîmprospătare nu este valid.",
         };
 
 
@@ -188,6 +212,25 @@ public class TranslationService : ITranslationService
                 "Password must contain at least one uppercase letter.",
             [ValidationErrorKeys.Auth.PasswordRequiresNonAlphanumeric] =
                 "Password must contain at least one special character.",
+            
+            // Identity-specific errors
+            [ValidationErrorKeys.Auth.DuplicateEmail] = "Email address is already registered.",
+            [ValidationErrorKeys.Auth.DuplicateUserName] = "Username is already taken.",
+            [ValidationErrorKeys.Auth.InvalidEmail] = "Email address is not valid.",
+            [ValidationErrorKeys.Auth.InvalidUserName] = "Username is not valid.",
+            [ValidationErrorKeys.Auth.InvalidToken] = "Security token is not valid.",
+            [ValidationErrorKeys.Auth.UserNotFound] = "User was not found.",
+            [ValidationErrorKeys.Auth.UserAlreadyHasPassword] = "User already has a password set.",
+            [ValidationErrorKeys.Auth.UserLockoutNotEnabled] = "Lockout is not enabled for this user.",
+            [ValidationErrorKeys.Auth.UserAlreadyInRole] = "User is already in this role.",
+            [ValidationErrorKeys.Auth.UserNotInRole] = "User is not in this role.",
+            [ValidationErrorKeys.Auth.PasswordMismatch] = "Password is incorrect.",
+            [ValidationErrorKeys.Auth.DefaultError] = "An error occurred. Please try again.",
+            [ValidationErrorKeys.Auth.ConcurrencyFailure] = "Concurrency error. Please reload and try again.",
+            [ValidationErrorKeys.Auth.LoginAlreadyAssociated] = "This login is already associated with another account.",
+            [ValidationErrorKeys.Auth.InvalidRoleName] = "Role name is not valid.",
+            [ValidationErrorKeys.Auth.DuplicateRoleName] = "Role name is already in use.",
+            [ValidationErrorKeys.Auth.RecoveryCodeRedemptionFailed] = "Recovery code is not valid.",
         };
     }
 }

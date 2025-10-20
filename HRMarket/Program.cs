@@ -6,8 +6,10 @@ using Common.Email;
 using Common.Media;
 using FluentValidation;
 using HRMarket.Configuration.Exceptions;
+using HRMarket.Configuration.Translation;
 using HRMarket.Core.Answers;
 using HRMarket.Core.Auth;
+using HRMarket.Core.Auth.Extensions;
 using HRMarket.Core.Auth.Tokens;
 using HRMarket.Core.Categories;
 using HRMarket.Core.Firms;
@@ -88,6 +90,8 @@ builder.Services.AddScoped<IAnswerService, AnswerService>();
 
 //Auth Services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthLanguageContext, AuthLanguageContext>();
+builder.Services.AddScoped<ITranslationService, TranslationService>();
 
 //Category Services
 builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -135,6 +139,7 @@ builder.Services.AddScoped<EmailProducer>();
 
 // Entitty Framework Validator
 builder.Services.AddScoped<EntityValidator>();
+builder.Services.AddScoped<CheckConstraintsDb>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateFirmDtoValidator>();
 
 // Exception Handler
@@ -169,9 +174,12 @@ builder.Services.AddMassTransit(x =>
             h.Username(emailSettings.Username);
             h.Password(emailSettings.Password);
         });
-        
+
+        // Configure the message to use specific queue name
+        cfg.Message<EmailMessage>(e => e.SetEntityName("email_queue"));
     });
 });
+
 
 
 builder.Services.AddAuthentication(options =>

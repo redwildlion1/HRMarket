@@ -1,7 +1,7 @@
 {
   "EmailQueueSettings": {
-    "Username": "guest",
-    "Password": "guest",
+    "Username": "appuser",
+    "Password": "appsecret",
     "Host": "localhost",
     "QueueName": "email_queue"
   },

@@ -35,7 +35,8 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmail([FromQuery] Guid userId, [FromQuery] string token)
     {
-        await authService.ConfirmEmail(userId, token);
+        var confirmEmailRequest = new ConfirmEmailRequest(userId, token);
+        await authService.ConfirmEmail(confirmEmailRequest);
         return Ok();
     }
 }
