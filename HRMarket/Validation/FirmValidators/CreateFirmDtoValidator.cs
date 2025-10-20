@@ -1,6 +1,4 @@
-﻿// HRMarket/Validation/FirmValidator.cs
-
-using FluentValidation;
+﻿using FluentValidation;
 using HRMarket.Configuration.Translation;
 using HRMarket.Configuration.Types;
 using HRMarket.Core.Firms.DTOs;
@@ -9,86 +7,81 @@ namespace HRMarket.Validation.FirmValidators;
 
 public class CreateFirmDtoValidator : BaseValidator<CreateFirmDto>
 {
-    public CreateFirmDtoValidator(ITranslationService translationService) 
-        : base(translationService)
+    public CreateFirmDtoValidator(
+        ITranslationService translationService,
+        ILanguageContext languageContext) 
+        : base(translationService, languageContext)
     {
         RuleFor(x => x.Cui)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "CUI"))
+            .WithMessage(Translate(ValidationErrorKeys.Required, "CUI"))
             .Length(12)
-            .WithMessage(x => Translate(ValidationErrorKeys.Firm.CuiInvalid, x))
+            .WithMessage(Translate(ValidationErrorKeys.Firm.CuiInvalid))
             .Must(BeAllDigits)
-            .WithMessage(x => Translate(ValidationErrorKeys.Firm.CuiFormat, x));
+            .WithMessage(Translate(ValidationErrorKeys.Firm.CuiFormat));
 
         RuleFor(x => x.Name)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "Name"));
+            .WithMessage(Translate(ValidationErrorKeys.Required, "Name"));
 
         RuleFor(x => x.Type)
             .Must(type => Enum.TryParse<FirmType>(type, true, out _))
-            .WithMessage(x => Translate(ValidationErrorKeys.Firm.TypeInvalid, x));
+            .WithMessage(Translate(ValidationErrorKeys.Firm.TypeInvalid));
 
         RuleFor(x => x.ContactEmail)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "Email"))
+            .WithMessage(Translate(ValidationErrorKeys.Required, "Email"))
             .EmailAddress()
-            .WithMessage(x => Translate(ValidationErrorKeys.EmailInvalid, x));
+            .WithMessage(Translate(ValidationErrorKeys.EmailInvalid));
         
         When(x => !string.IsNullOrEmpty(x.LinksWebsite), () =>
         {
             RuleFor(x => x.LinksWebsite)
                 .Must(BeValidUrl!)
-                .WithMessage(x => Translate(ValidationErrorKeys.InvalidUrl, x));
+                .WithMessage(Translate(ValidationErrorKeys.InvalidUrl));
         });
         
         When(x => !string.IsNullOrEmpty(x.LinksLinkedIn), () =>
         {
             RuleFor(x => x.LinksLinkedIn)
                 .Must(uri => BeValidUrl(uri!) && uri!.Contains("linkedin.com"))
-                .WithMessage(x => Translate(ValidationErrorKeys.SocialMedia.LinkedInInvalid, x));
+                .WithMessage(Translate(ValidationErrorKeys.SocialMedia.LinkedInInvalid));
         });
 
         When(x => !string.IsNullOrEmpty(x.LinksFacebook), () =>
         {
             RuleFor(x => x.LinksFacebook)
                 .Must(uri => BeValidUrl(uri!) && uri!.Contains("facebook.com"))
-                .WithMessage(x => Translate(ValidationErrorKeys.SocialMedia.FacebookInvalid, x));
+                .WithMessage(Translate(ValidationErrorKeys.SocialMedia.FacebookInvalid));
         });
         
         When(x => !string.IsNullOrEmpty(x.LinksTwitter), () =>
         {
             RuleFor(x => x.LinksTwitter)
                 .Must(uri => BeValidUrl(uri!) && (uri!.Contains("twitter.com") || uri.Contains("x.com")))
-                .WithMessage(x => Translate(ValidationErrorKeys.SocialMedia.TwitterInvalid, x));
+                .WithMessage(Translate(ValidationErrorKeys.SocialMedia.TwitterInvalid));
         });
         
         When(x => !string.IsNullOrEmpty(x.LinksInstagram), () =>
         {
             RuleFor(x => x.LinksInstagram)
                 .Must(uri => BeValidUrl(uri!) && uri!.Contains("instagram.com"))
-                .WithMessage(x => Translate(ValidationErrorKeys.SocialMedia.InstagramInvalid, x));
+                .WithMessage(Translate(ValidationErrorKeys.SocialMedia.InstagramInvalid));
         });
 
         RuleFor(x => x.LocationCity)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "City"));
+            .WithMessage(Translate(ValidationErrorKeys.Required, "City"));
 
         RuleFor(x => x.LocationCountryId)
             .GreaterThan(0)
-            .WithMessage(x => Translate(ValidationErrorKeys.MustBePositive, x, "Country"));
+            .WithMessage(Translate(ValidationErrorKeys.MustBePositive, "Country"));
 
         RuleFor(x => x.LocationCountyId)
             .GreaterThan(0)
-            .WithMessage(x => Translate(ValidationErrorKeys.MustBePositive, x, "County"));
+            .WithMessage(Translate(ValidationErrorKeys.MustBePositive, "County"));
     }
 
-    private static bool BeValidUrl(string uri)
-    {
-        return Uri.IsWellFormedUriString(uri, UriKind.Absolute);
-    }
-
-    private static bool BeAllDigits(string cui)
-    {
-        return cui.All(char.IsDigit);
-    }
+    private static bool BeValidUrl(string uri) => Uri.IsWellFormedUriString(uri, UriKind.Absolute);
+    private static bool BeAllDigits(string cui) => cui.All(char.IsDigit);
 }

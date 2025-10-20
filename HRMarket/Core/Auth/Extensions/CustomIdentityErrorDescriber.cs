@@ -5,11 +5,11 @@ namespace HRMarket.Core.Auth.Extensions;
 
 /// <summary>
 /// Custom Identity error describer that uses translation service
-/// Gets language from scoped AuthLanguageContext
+/// Gets language from scoped LanguageContext
 /// </summary>
 public class CustomIdentityErrorDescriber(
     ITranslationService translationService,
-    IAuthLanguageContext languageContext)
+    ILanguageContext languageContext)
     : IdentityErrorDescriber
 {
     private string T(string key, params object[] args) => 

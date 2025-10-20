@@ -23,7 +23,7 @@ public class AuthService(
     ITokenService tokenService,
     IConfiguration configuration,
     ITranslationService translationService,
-    IAuthLanguageContext languageContext)
+    ILanguageContext languageContext)
     : IAuthService
 {
     public async Task Register(RegisterDto dto)
@@ -35,34 +35,29 @@ public class AuthService(
             Newsletter = dto.Newsletter,
         };
 
-        // Create user - errors automatically translated via CustomIdentityErrorDescriber
         var result = await userManager.CreateAsync(user, dto.Password);
         result.ThrowIfFailed();
 
-        // Assign default role
         var roleResult = await userManager.AddToRoleAsync(user, "User");
         roleResult.ThrowIfFailed();
 
-        // Send confirmation email
         var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
         var confirmationLink = $"{configuration["AppSettings:FrontendUrl"]}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
 
-        await emailService.SendConfirmationEmail(user.Email!, confirmationLink);
+        await emailService.SendConfirmationEmail(user.Email, confirmationLink);
     }
 
     public async Task<LoginResult> Login(LoginRequest request)
     {
-        var lang = languageContext.Language;
-
         var user = await userManager.FindByEmailAsync(request.Email);
         if (user == null || !await userManager.CheckPasswordAsync(user, request.Password))
         {
-            translationService.ThrowAuthError("email", ValidationErrorKeys.Auth.InvalidCredentials, lang);
+            translationService.ThrowAuthError(languageContext, "email", ValidationErrorKeys.Auth.InvalidCredentials);
         }
 
         if (!user!.EmailConfirmed)
         {
-            translationService.ThrowAuthError("email", ValidationErrorKeys.Auth.EmailNotConfirmed, lang);
+            translationService.ThrowAuthError(languageContext, "email", ValidationErrorKeys.Auth.EmailNotConfirmed);
         }
 
         var jwtToken = await tokenService.GenerateJwtTokenAsync(user);
@@ -73,26 +68,24 @@ public class AuthService(
 
     public async Task<LoginResult> RefreshToken(RefreshTokenRequest request)
     {
-        var lang = languageContext.Language;
-
         var tokenHandler = new JsonWebTokenHandler();
         var jwtToken = tokenHandler.ReadJsonWebToken(request.Token);
         var emailClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "email");
 
         if (emailClaim == null)
         {
-            translationService.ThrowAuthError("token", ValidationErrorKeys.Auth.InvalidToken, lang);
+            translationService.ThrowAuthError(languageContext, "token", ValidationErrorKeys.Auth.InvalidToken);
         }
 
         var user = await userManager.FindByEmailAsync(emailClaim!.Value);
         if (user == null)
         {
-            translationService.ThrowAuthError("token", ValidationErrorKeys.Auth.UserNotFound, lang);
+            translationService.ThrowAuthError(languageContext, "token", ValidationErrorKeys.Auth.UserNotFound);
         }
 
         if (!await tokenService.IsRefreshTokenValidAsync(user!.Id, request.RefreshToken))
         {
-            translationService.ThrowAuthError("refreshToken", ValidationErrorKeys.Auth.InvalidRefreshToken, lang);
+            translationService.ThrowAuthError(languageContext, "refreshToken", ValidationErrorKeys.Auth.InvalidRefreshToken);
         }
 
         var newJwtToken = await tokenService.GenerateJwtTokenAsync(user);
@@ -103,22 +96,15 @@ public class AuthService(
         return new LoginResult(newJwtToken.Value, newRefreshToken.Value, newJwtToken.Expires, newRefreshToken.Expires);
     }
 
-    public Task ConfirmEmail(ConfirmEmailRequest request)
+    public async Task ConfirmEmail(ConfirmEmailRequest request)
     {
-        throw new NotImplementedException();
-    }
-
-    public async Task ConfirmEmail(Guid userId, string token)
-    {
-        var lang = languageContext.Language;
-
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        var user = await userManager.FindByIdAsync(request.UserId.ToString());
         if (user == null)
         {
-            translationService.ThrowAuthError("userId", ValidationErrorKeys.Auth.UserNotFound, lang);
+            translationService.ThrowAuthError(languageContext, "userId", ValidationErrorKeys.Auth.UserNotFound);
         }
 
-        var result = await userManager.ConfirmEmailAsync(user!, token);
+        var result = await userManager.ConfirmEmailAsync(user!, request.Token);
         result.ThrowIfFailed();
     }
 }

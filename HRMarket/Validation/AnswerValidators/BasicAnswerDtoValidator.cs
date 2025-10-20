@@ -1,81 +1,82 @@
-﻿// HRMarket/Validation/AnswerValidator.cs
-
-using FluentValidation;
+﻿using FluentValidation;
 using HRMarket.Configuration.Translation;
 using HRMarket.Core.Answers;
 
 namespace HRMarket.Validation.AnswerValidators;
 
-public class BasicAnswerDtoValidator : FluentValidation.AbstractValidator<BasicAnswerDto>
+public class BasicAnswerDtoValidator : AbstractValidator<BasicAnswerDto>
 {
     private readonly ITranslationService _translationService;
+    private readonly ILanguageContext _languageContext;
 
-    public BasicAnswerDtoValidator(ITranslationService translationService)
+    public BasicAnswerDtoValidator(
+        ITranslationService translationService,
+        ILanguageContext languageContext)
     {
         _translationService = translationService;
+        _languageContext = languageContext;
 
         RuleFor(x => x.QuestionId)
             .NotEmpty()
-            .WithMessage(x => GetMessage(ValidationErrorKeys.Required, x, "QuestionId"));
+            .WithMessage(T(ValidationErrorKeys.Required, "QuestionId"));
 
         RuleFor(x => x.Response)
             .NotEmpty()
-            .WithMessage(x => GetMessage(ValidationErrorKeys.Required, x, "Response"));
+            .WithMessage(T(ValidationErrorKeys.Required, "Response"));
     }
 
-    private string GetMessage(string key, BasicAnswerDto instance, params object[] args)
-    {
-        var language = string.IsNullOrWhiteSpace(instance.Language) ? "ro" : instance.Language.ToLower();
-        return _translationService.TranslateValidationError(key, language, args);
-    }
+    private string T(string key, params object[] args) => 
+        _translationService.TranslateValidationError(key, _languageContext.Language, args);
 }
 
-public class SingleChoiceAnswerDtoValidator : FluentValidation.AbstractValidator<SingleChoiceAnswerDto>
+public class SingleChoiceAnswerDtoValidator : AbstractValidator<SingleChoiceAnswerDto>
 {
     private readonly ITranslationService _translationService;
+    private readonly ILanguageContext _languageContext;
 
-    public SingleChoiceAnswerDtoValidator(ITranslationService translationService)
+    public SingleChoiceAnswerDtoValidator(
+        ITranslationService translationService,
+        ILanguageContext languageContext)
     {
         _translationService = translationService;
+        _languageContext = languageContext;
 
         RuleFor(x => x.QuestionId)
             .NotEmpty()
-            .WithMessage(x => GetMessage(ValidationErrorKeys.Required, x, "QuestionId"));
+            .WithMessage(T(ValidationErrorKeys.Required, "QuestionId"));
 
         RuleFor(x => x.SelectedOption)
             .NotEmpty()
-            .WithMessage(x => GetMessage(ValidationErrorKeys.Required, x, "SelectedOption"));
+            .WithMessage(T(ValidationErrorKeys.Required, "SelectedOption"));
     }
 
-    private string GetMessage(string key, SingleChoiceAnswerDto instance, params object[] args)
-    {
-        var language = string.IsNullOrWhiteSpace(instance.Language) ? "ro" : instance.Language.ToLower();
-        return _translationService.TranslateValidationError(key, language, args);
-    }
+    private string T(string key, params object[] args) => 
+        _translationService.TranslateValidationError(key, _languageContext.Language, args);
 }
 
-public class MultiChoiceAnswerDtoValidator : FluentValidation.AbstractValidator<MultiChoiceAnswerDto>
+public class MultiChoiceAnswerDtoValidator : AbstractValidator<MultiChoiceAnswerDto>
 {
     private readonly ITranslationService _translationService;
+    private readonly ILanguageContext _languageContext;
 
-    public MultiChoiceAnswerDtoValidator(ITranslationService translationService)
+    public MultiChoiceAnswerDtoValidator(
+        ITranslationService translationService,
+        ILanguageContext languageContext)
     {
         _translationService = translationService;
+        _languageContext = languageContext;
 
         RuleFor(x => x.QuestionId)
             .NotEmpty()
-            .WithMessage(x => GetMessage(ValidationErrorKeys.Required, x, "QuestionId"));
+            .WithMessage(T(ValidationErrorKeys.Required, "QuestionId"));
 
         RuleFor(x => x.SelectedOptions)
             .NotEmpty()
-            .WithMessage(x => GetMessage(ValidationErrorKeys.Required, x, "SelectedOptions"))
+            .WithMessage(T(ValidationErrorKeys.Required, "SelectedOptions"))
             .Must(options => options.Count > 0)
-            .WithMessage(x => GetMessage(ValidationErrorKeys.Question.OptionsMinCount, x, "Selected Options", 1));
+            .WithMessage(T(ValidationErrorKeys.Question.OptionsMinCount, "Selected Options", 1));
     }
 
-    private string GetMessage(string key, MultiChoiceAnswerDto instance, params object[] args)
-    {
-        var language = string.IsNullOrWhiteSpace(instance.Language) ? "ro" : instance.Language.ToLower();
-        return _translationService.TranslateValidationError(key, language, args);
-    }
+    private string T(string key, params object[] args) => 
+        _translationService.TranslateValidationError(key, _languageContext.Language, args);
 }

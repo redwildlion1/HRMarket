@@ -1,36 +1,26 @@
-﻿// HRMarket/Validation/BaseValidator.cs
-using FluentValidation;
+﻿using FluentValidation;
 using HRMarket.Configuration.Translation;
 using HRMarket.Core;
 
 namespace HRMarket.Validation;
 
 /// <summary>
-/// Base validator that provides translation support based on DTO language
+/// Base validator that provides translation support from LanguageContext
 /// </summary>
-public abstract class BaseValidator<T> : AbstractValidator<T> where T : BaseDto
+public abstract class BaseValidator<T>(
+    ITranslationService translationService,
+    ILanguageContext languageContext)
+    : AbstractValidator<T>
+    where T : BaseDto
 {
-    protected readonly ITranslationService TranslationService;
-
-    protected BaseValidator(ITranslationService translationService)
-    {
-        TranslationService = translationService;
-    }
+    protected readonly ITranslationService TranslationService = translationService;
+    protected readonly ILanguageContext LanguageContext = languageContext;
 
     /// <summary>
-    /// Get translated error message using the language from the DTO
+    /// Get translated error message using the current request language
     /// </summary>
-    protected string Translate(string key, T instance, params object[] args)
+    protected string Translate(string key, params object[] args)
     {
-        var language = string.IsNullOrWhiteSpace(instance.Language) ? "ro" : instance.Language.ToLower();
-        return TranslationService.TranslateValidationError(key, language, args);
-    }
-
-    /// <summary>
-    /// Get translated error message using a specific language
-    /// </summary>
-    protected string Translate(string key, string language, params object[] args)
-    {
-        return TranslationService.TranslateValidationError(key, language, args);
+        return TranslationService.TranslateValidationError(key, LanguageContext.Language, args);
     }
 }

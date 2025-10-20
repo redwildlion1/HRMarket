@@ -1,6 +1,4 @@
-﻿// HRMarket/Validation/QuestionValidator.cs
-
-using FluentValidation;
+﻿using FluentValidation;
 using HRMarket.Configuration.Translation;
 using HRMarket.Configuration.Types;
 using HRMarket.Core.Questions.DTOs;
@@ -10,23 +8,25 @@ namespace HRMarket.Validation.QuestionValidators;
 
 public class CreateQuestionsForCategoryDtoValidator : BaseValidator<CreateQuestionsForCategoryDto>
 {
-    public CreateQuestionsForCategoryDtoValidator(ITranslationService translationService) 
-        : base(translationService)
+    public CreateQuestionsForCategoryDtoValidator(
+        ITranslationService translationService,
+        ILanguageContext languageContext) 
+        : base(translationService, languageContext)
     {
         RuleFor(x => x.CategoryId)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "CategoryId"));
+            .WithMessage(Translate(ValidationErrorKeys.Required, "CategoryId"));
 
         RuleFor(x => x.Questions)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "Questions"))
+            .WithMessage(Translate(ValidationErrorKeys.Required, "Questions"))
             .Must(HaveUniqueOrders)
-            .WithMessage(x => Translate(ValidationErrorKeys.Question.DuplicateOrder, x))
+            .WithMessage(Translate(ValidationErrorKeys.Question.DuplicateOrder))
             .Must(HaveSequentialOrders)
-            .WithMessage(x => Translate(ValidationErrorKeys.Question.OrderGaps, x));
+            .WithMessage(Translate(ValidationErrorKeys.Question.OrderGaps));
 
         RuleForEach(x => x.Questions)
-            .SetValidator((dto, _) => new PostQuestionDtoValidator(TranslationService, dto.Language));
+            .SetValidator(new PostQuestionDtoValidator(TranslationService, LanguageContext));
     }
 
     private static bool HaveUniqueOrders(List<PostQuestionDto> questions)
@@ -42,15 +42,17 @@ public class CreateQuestionsForCategoryDtoValidator : BaseValidator<CreateQuesti
     }
 }
 
-public class PostQuestionDtoValidator : FluentValidation.AbstractValidator<PostQuestionDto>
+public class PostQuestionDtoValidator : AbstractValidator<PostQuestionDto>
 {
     private readonly ITranslationService _translationService;
-    private readonly string _language;
+    private readonly ILanguageContext _languageContext;
 
-    public PostQuestionDtoValidator(ITranslationService translationService, string language = "ro")
+    public PostQuestionDtoValidator(
+        ITranslationService translationService,
+        ILanguageContext languageContext)
     {
         _translationService = translationService;
-        _language = string.IsNullOrWhiteSpace(language) ? "ro" : language.ToLower();
+        _languageContext = languageContext;
 
         RuleFor(x => x.Title)
             .NotEmpty()
@@ -80,7 +82,7 @@ public class PostQuestionDtoValidator : FluentValidation.AbstractValidator<PostQ
                         .WithMessage(T(ValidationErrorKeys.Option.OrderGaps));
                     
                     RuleForEach(x => x.Options)
-                        .SetValidator(new PostOptionDtoValidator(_translationService, _language));
+                        .SetValidator(new PostOptionDtoValidator(_translationService, _languageContext));
                 });
         });
 
@@ -100,7 +102,7 @@ public class PostQuestionDtoValidator : FluentValidation.AbstractValidator<PostQ
                         .WithMessage(T(ValidationErrorKeys.Option.OrderGaps));
                     
                     RuleForEach(x => x.Options)
-                        .SetValidator(new PostOptionDtoValidator(_translationService, _language));
+                        .SetValidator(new PostOptionDtoValidator(_translationService, _languageContext));
                 });
         });
 
@@ -114,7 +116,7 @@ public class PostQuestionDtoValidator : FluentValidation.AbstractValidator<PostQ
         When(x => IsBasicQuestionType(x.Type) && !string.IsNullOrWhiteSpace(x.ValidationJson), () =>
         {
             RuleFor(x => x.ValidationJson)
-                .Must(BeValidJsonSchema!)
+                .Must(BeValidJsonSchema)
                 .WithMessage(T(ValidationErrorKeys.Question.InvalidJsonSchema));
         });
 
@@ -125,34 +127,27 @@ public class PostQuestionDtoValidator : FluentValidation.AbstractValidator<PostQ
                 .WithMessage(T(ValidationErrorKeys.Question.VariantDuplicateLanguage, "{0}"));
             
             RuleForEach(x => x.Variants)
-                .SetValidator(new PostQuestionVariantDtoValidator(_translationService, _language));
+                .SetValidator(new PostQuestionVariantDtoValidator(_translationService, _languageContext));
         });
     }
 
-    private string T(string key, params object[] args)
-    {
-        return _translationService.TranslateValidationError(key, _language, args);
-    }
+    private string T(string key, params object[] args) => 
+        _translationService.TranslateValidationError(key, _languageContext.Language, args);
 
-    private static bool BeValidQuestionType(string type)
-    {
-        return Enum.TryParse<QuestionType>(type, true, out _);
-    }
+    private static bool BeValidQuestionType(string type) => 
+        Enum.TryParse<QuestionType>(type, true, out _);
 
     private static bool IsBasicQuestionType(string type)
     {
         if (!Enum.TryParse<QuestionType>(type, true, out var questionType))
             return false;
-
-        return questionType is QuestionType.String or QuestionType.Text 
-            or QuestionType.Number or QuestionType.Date;
+        return questionType is QuestionType.String or QuestionType.Text or QuestionType.Number or QuestionType.Date;
     }
 
     private static bool BeValidJsonSchema(string? validationJson)
     {
         if (string.IsNullOrWhiteSpace(validationJson) || validationJson == "null")
             return true;
-
         try
         {
             _ = JsonSchema.FromText(validationJson);
@@ -164,39 +159,28 @@ public class PostQuestionDtoValidator : FluentValidation.AbstractValidator<PostQ
         }
     }
 
-    private static bool HaveUniqueOrders(List<PostOptionDto> options)
-    {
-        var orders = options.Select(o => o.Order).ToList();
-        return orders.Count == orders.Distinct().Count();
-    }
+    private static bool HaveUniqueOrders(List<PostOptionDto> options) => 
+        options.Select(o => o.Order).Distinct().Count() == options.Count;
 
     private static bool HaveSequentialOrders(List<PostOptionDto> options)
     {
         var orders = options.Select(o => o.Order).OrderBy(o => o).ToList();
-        for (int i = 0; i < orders.Count; i++)
-        {
-            if (orders[i] != i)
-                return false;
-        }
-        return true;
+        return !orders.Where((t, i) => t != i).Any();
     }
 
-    private static bool HaveUniqueLanguages(List<PostQuestionVariantDto> variants)
-    {
-        var languages = variants.Select(v => v.LanguageId).ToList();
-        return languages.Count == languages.Distinct().Count();
-    }
+    private static bool HaveUniqueLanguages(List<PostQuestionVariantDto> variants) => 
+        variants.Select(v => v.LanguageId).Distinct().Count() == variants.Count;
 }
 
-public class PostOptionDtoValidator : FluentValidation.AbstractValidator<PostOptionDto>
+public class PostOptionDtoValidator : AbstractValidator<PostOptionDto>
 {
     private readonly ITranslationService _translationService;
-    private readonly string _language;
+    private readonly ILanguageContext _languageContext;
 
-    public PostOptionDtoValidator(ITranslationService translationService, string language = "ro")
+    public PostOptionDtoValidator(ITranslationService translationService, ILanguageContext languageContext)
     {
         _translationService = translationService;
-        _language = string.IsNullOrWhiteSpace(language) ? "ro" : language.ToLower();
+        _languageContext = languageContext;
 
         RuleFor(x => x.Text)
             .NotEmpty()
@@ -213,25 +197,23 @@ public class PostOptionDtoValidator : FluentValidation.AbstractValidator<PostOpt
                 .WithMessage(T(ValidationErrorKeys.Question.VariantDuplicateLanguage, "{0}"));
             
             RuleForEach(x => x.Variants)
-                .SetValidator(new PostOptionVariantDtoValidator(_translationService, _language));
+                .SetValidator(new PostOptionVariantDtoValidator(_translationService, _languageContext));
         });
     }
 
-    private string T(string key, params object[] args)
-    {
-        return _translationService.TranslateValidationError(key, _language, args);
-    }
+    private string T(string key, params object[] args) => 
+        _translationService.TranslateValidationError(key, _languageContext.Language, args);
 }
 
-public class PostQuestionVariantDtoValidator : FluentValidation.AbstractValidator<PostQuestionVariantDto>
+public class PostQuestionVariantDtoValidator : AbstractValidator<PostQuestionVariantDto>
 {
     private readonly ITranslationService _translationService;
-    private readonly string _language;
+    private readonly ILanguageContext _languageContext;
 
-    public PostQuestionVariantDtoValidator(ITranslationService translationService, string language = "ro")
+    public PostQuestionVariantDtoValidator(ITranslationService translationService, ILanguageContext languageContext)
     {
         _translationService = translationService;
-        _language = string.IsNullOrWhiteSpace(language) ? "ro" : language.ToLower();
+        _languageContext = languageContext;
 
         RuleFor(x => x.LanguageId)
             .NotEmpty()
@@ -244,21 +226,19 @@ public class PostQuestionVariantDtoValidator : FluentValidation.AbstractValidato
             .WithMessage(T(ValidationErrorKeys.Required, "Title"));
     }
 
-    private string T(string key, params object[] args)
-    {
-        return _translationService.TranslateValidationError(key, _language, args);
-    }
+    private string T(string key, params object[] args) => 
+        _translationService.TranslateValidationError(key, _languageContext.Language, args);
 }
 
-public class PostOptionVariantDtoValidator : FluentValidation.AbstractValidator<PostOptionVariantDto>
+public class PostOptionVariantDtoValidator : AbstractValidator<PostOptionVariantDto>
 {
     private readonly ITranslationService _translationService;
-    private readonly string _language;
+    private readonly ILanguageContext _languageContext;
 
-    public PostOptionVariantDtoValidator(ITranslationService translationService, string language = "ro")
+    public PostOptionVariantDtoValidator(ITranslationService translationService, ILanguageContext languageContext)
     {
         _translationService = translationService;
-        _language = string.IsNullOrWhiteSpace(language) ? "ro" : language.ToLower();
+        _languageContext = languageContext;
 
         RuleFor(x => x.LanguageId)
             .NotEmpty()
@@ -271,8 +251,6 @@ public class PostOptionVariantDtoValidator : FluentValidation.AbstractValidator<
             .WithMessage(T(ValidationErrorKeys.Required, "Value"));
     }
     
-    private string T(string key, params object[] args)
-    {
-        return _translationService.TranslateValidationError(key, _language, args);
-    }
+    private string T(string key, params object[] args) => 
+        _translationService.TranslateValidationError(key, _languageContext.Language, args);
 }

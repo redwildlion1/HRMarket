@@ -6,6 +6,7 @@ using Common.Email;
 using Common.Media;
 using FluentValidation;
 using HRMarket.Configuration.Exceptions;
+using HRMarket.Configuration.Swagger;
 using HRMarket.Configuration.Translation;
 using HRMarket.Core.Answers;
 using HRMarket.Core.Auth;
@@ -21,7 +22,6 @@ using HRMarket.Entities.Auth;
 using HRMarket.Middleware;
 using HRMarket.OuterAPIs.Email;
 using HRMarket.OuterAPIs.Media;
-using HRMarket.Validation;
 using HRMarket.Validation.Extensions;
 using HRMarket.Validation.FirmValidators;
 using Mapster;
@@ -33,35 +33,67 @@ using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
 using Swashbuckle.AspNetCore.Filters;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-// In Program.cs or Startup.cs
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ValidateModelFilter>();
 });
 
 builder.Services.AddEndpointsApiExplorer();
-
-//Swagger UI 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "HRMarket API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "HRMarket API", 
+        Version = "v1",
+        Description = "HRMarket API - Multi-language support via Accept-Language header"
+    });
+    
     c.ExampleFilters();
+    
+    // Add Accept-Language header to all endpoints
+    c.OperationFilter<AcceptLanguageHeaderParameter>();
+    
+    // Optional: Add JWT authentication to Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
-// Register Swagger example filters
+
 builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
 
 // Database Configuration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Identity Configuration
+// Translation and Language Services (BEFORE Identity)
+builder.Services.AddScoped<ILanguageContext, LanguageContext>();
+builder.Services.AddScoped<ITranslationService, TranslationService>();
+
+// Identity Configuration with Custom Error Describer
 builder.Services.AddIdentity<User, Role>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
@@ -73,6 +105,7 @@ builder.Services.AddIdentity<User, Role>(options =>
     options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
+.AddErrorDescriber<CustomIdentityErrorDescriber>()
 .AddDefaultTokenProviders();
 
 var sharedConfigPath = Path.Combine(builder.Environment.ContentRootPath, "..", "Common", "CommonSettings.json");
@@ -88,12 +121,10 @@ builder.Services.AddSingleton<TokenSettings>(sp =>
 // Answer Services
 builder.Services.AddScoped<IAnswerService, AnswerService>();
 
-//Auth Services
+// Auth Services
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IAuthLanguageContext, AuthLanguageContext>();
-builder.Services.AddScoped<ITranslationService, TranslationService>();
 
-//Category Services
+// Category Services
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
 
@@ -109,35 +140,32 @@ builder.Services.AddScoped<AwsConfigurator>();
 builder.Services.AddScoped<IMediaProducer, MediaProducer>();
 
 // AWS S3 Configuration
-builder.Services.Configure<AwsSettings>(
-    builder.Configuration.GetSection(AwsSettings.Section));
+builder.Services.Configure<AwsSettings>(builder.Configuration.GetSection(AwsSettings.Section));
 var awsSettings = builder.Configuration.GetSection(AwsSettings.Section).Get<AwsSettings>()
                   ?? throw new Exception("AWS settings are not configured properly.");
 builder.Services.AddSingleton(awsSettings);
 
 builder.Services.AddScoped<IAmazonS3>(sp =>
 {
-    var credentials = new Amazon.Runtime.BasicAWSCredentials(
-        awsSettings.AccessKey, awsSettings.SecretKey);
+    var credentials = new Amazon.Runtime.BasicAWSCredentials(awsSettings.AccessKey, awsSettings.SecretKey);
     var region = Amazon.RegionEndpoint.GetBySystemName(awsSettings.Region);
     return new AmazonS3Client(credentials, region);
 });
-
 
 // Question Services
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IQuestionRepository, QuestionRepository>();
 
 // Email Settings Configuration
-builder.Services.Configure<EmailQueueSettings>(
-    builder.Configuration.GetSection(EmailQueueSettings.SectionName));
+builder.Services.Configure<EmailQueueSettings>(builder.Configuration.GetSection(EmailQueueSettings.SectionName));
 builder.Services.AddSingleton<EmailQueueSettings>(sp =>
     sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<EmailQueueSettings>>().Value);
+
 // Email Services
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<EmailProducer>();
 
-// Entitty Framework Validator
+// Entity Framework Validator
 builder.Services.AddScoped<EntityValidator>();
 builder.Services.AddScoped<CheckConstraintsDb>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateFirmDtoValidator>();
@@ -146,7 +174,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateFirmDtoValidator>();
 builder.Services.AddExceptionHandling();
 
 TypeAdapterConfig.GlobalSettings.Default
-    .PreserveReference(true) // optional: avoid circular refs
+    .PreserveReference(true)
     .ShallowCopyForSameType(true)
     .EnableNonPublicMembers(true)
     .IgnoreNullValues(true)
@@ -155,18 +183,15 @@ TypeAdapterConfig.GlobalSettings.Default
 
 FirmMapperConfig.Configure();
 
-// Authentication and Authorization - JWT Configuration
-var tokenSettings = builder.Configuration.GetSection(TokenSettings.SectionName)
-                       .Get<TokenSettings>()
+// JWT Configuration
+var tokenSettings = builder.Configuration.GetSection(TokenSettings.SectionName).Get<TokenSettings>()
                    ?? throw new Exception("Token settings are not configured properly.");
 
 builder.Services.AddMassTransit(x =>
 {
-    // Configure RabbitMQ
     x.UsingRabbitMq((context, cfg) =>
     {
         var emailSettings = builder.Configuration.GetSection(EmailQueueSettings.SectionName).Get<EmailQueueSettings>();
-
         if (emailSettings == null) throw new InvalidOperationException("EmailSettings section is missing in configuration.");
         
         cfg.Host(emailSettings.Host, h =>
@@ -175,49 +200,44 @@ builder.Services.AddMassTransit(x =>
             h.Password(emailSettings.Password);
         });
 
-        // Configure the message to use specific queue name
         cfg.Message<EmailMessage>(e => e.SetEntityName("email_queue"));
     });
 });
 
-
-
 builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
-    .AddJwtBearer(options =>
+        ValidateIssuer = true,
+        ValidIssuer = tokenSettings.Issuer,
+        ValidateAudience = true,
+        ValidAudience = tokenSettings.Audience,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.FromMinutes(1),
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenSettings.SecretKey)),
+        RoleClaimType = ClaimTypes.Role,
+        NameClaimType = ClaimTypes.NameIdentifier
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnAuthenticationFailed = context =>
         {
-            options.SaveToken = true;
-            options.TokenValidationParameters = new TokenValidationParameters
+            if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
             {
-                ValidateIssuer = true,
-                ValidIssuer = tokenSettings.Issuer,
-                ValidateAudience = true,
-                ValidAudience = tokenSettings.Audience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromMinutes(1),
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(tokenSettings.SecretKey)),
-                RoleClaimType = ClaimTypes.Role,
-                NameClaimType = ClaimTypes.NameIdentifier
-            };
-            options.Events = new JwtBearerEvents
-            {
-                OnAuthenticationFailed = context =>
-                {
-                    if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
-                    {
-                        context.Response.Headers.Append("Token-Expired", "true");
-                    }
-                    return Task.CompletedTask;
-                }
-            };
+                context.Response.Headers.Append("Token-Expired", "true");
+            }
+            return Task.CompletedTask;
         }
-    );
+    };
+});
 
 builder.Services.AddCors(options =>
 {
@@ -231,33 +251,29 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddAuthorization();
 
-// Business Services
-builder.Services.AddScoped<IAuthService, AuthService>();
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 
-// Enable Swagger in all environments for testing (you can restrict this later)
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "HRMarket API v1");
-    c.RoutePrefix = string.Empty; // This makes Swagger UI the default page
+    c.RoutePrefix = string.Empty;
 });
 
 app.UseHttpsRedirection();
+
+// Language extraction BEFORE authentication
+app.UseLanguageExtraction();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseCors("AllowAll");
-
 app.MapControllers();
-
 app.UseExceptionHandling();
-
 
 app.Run();

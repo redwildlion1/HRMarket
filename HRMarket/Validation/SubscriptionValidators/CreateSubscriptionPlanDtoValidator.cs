@@ -1,6 +1,4 @@
-﻿// HRMarket/Validation/StripeValidator.cs
-
-using FluentValidation;
+﻿using FluentValidation;
 using HRMarket.Configuration.Translation;
 using HRMarket.Core.StripeApi;
 
@@ -8,48 +6,52 @@ namespace HRMarket.Validation.SubscriptionValidators;
 
 public class CreateSubscriptionPlanDtoValidator : BaseValidator<CreateSubscriptionPlanDto>
 {
-    public CreateSubscriptionPlanDtoValidator(ITranslationService translationService) 
-        : base(translationService)
+    public CreateSubscriptionPlanDtoValidator(
+        ITranslationService translationService,
+        ILanguageContext languageContext) 
+        : base(translationService, languageContext)
     {
         RuleFor(x => x.Name)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "Name"))
+            .WithMessage(Translate(ValidationErrorKeys.Required, "Name"))
             .MaximumLength(50)
-            .WithMessage(x => Translate(ValidationErrorKeys.MaxLength, x, "Name", 50));
+            .WithMessage(Translate(ValidationErrorKeys.MaxLength, "Name", 50));
 
         RuleFor(x => x.Description)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "Description"))
+            .WithMessage(Translate(ValidationErrorKeys.Required, "Description"))
             .MaximumLength(500)
-            .WithMessage(x => Translate(ValidationErrorKeys.MaxLength, x, "Description", 500));
+            .WithMessage(Translate(ValidationErrorKeys.MaxLength, "Description", 500));
 
         RuleFor(x => x.PriceMonthly)
             .GreaterThan(0)
-            .WithMessage(x => Translate(ValidationErrorKeys.MustBePositive, x, "Monthly Price"));
+            .WithMessage(Translate(ValidationErrorKeys.MustBePositive, "Monthly Price"));
 
         RuleFor(x => x.PriceYearly)
             .GreaterThan(0)
-            .WithMessage(x => Translate(ValidationErrorKeys.MustBePositive, x, "Yearly Price"));
+            .WithMessage(Translate(ValidationErrorKeys.MustBePositive, "Yearly Price"));
 
         RuleFor(x => x.Features)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "Features"))
+            .WithMessage(Translate(ValidationErrorKeys.Required, "Features"))
             .Must(features => features.Count > 0)
-            .WithMessage(x => Translate(ValidationErrorKeys.Question.OptionsMinCount, x, "Features", 1));
+            .WithMessage(Translate(ValidationErrorKeys.Question.OptionsMinCount, "Features", 1));
     }
 }
 
 public class CreateCheckoutSessionDtoValidator : BaseValidator<CreateCheckoutSessionDto>
 {
-    public CreateCheckoutSessionDtoValidator(ITranslationService translationService) 
-        : base(translationService)
+    public CreateCheckoutSessionDtoValidator(
+        ITranslationService translationService,
+        ILanguageContext languageContext) 
+        : base(translationService, languageContext)
     {
         RuleFor(x => x.FirmId)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "FirmId"));
+            .WithMessage(Translate(ValidationErrorKeys.Required, "FirmId"));
 
         RuleFor(x => x.PriceId)
             .NotEmpty()
-            .WithMessage(x => Translate(ValidationErrorKeys.Required, x, "PriceId"));
+            .WithMessage(Translate(ValidationErrorKeys.Required, "PriceId"));
     }
 }

@@ -1,12 +1,9 @@
 ﻿namespace HRMarket.Core;
 
 /// <summary>
-/// Base class for all DTOs that support localization
+/// Base class for all DTOs
 /// </summary>
 public abstract class BaseDto
 {
-    /// <summary>
-    /// Language code for validation errors (e.g., "ro", "en")
-    /// </summary>
-    public string Language { get; set; } = "ro";
+    // Language removed - now using Accept-Language header via middleware
 }

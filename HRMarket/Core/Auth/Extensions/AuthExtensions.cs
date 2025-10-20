@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 namespace HRMarket.Core.Auth.Extensions;
 
 /// <summary>
-/// Clean extension methods for authentication operations
+/// Extension methods for authentication operations
 /// </summary>
 public static class AuthExtensions
 {
@@ -25,33 +25,30 @@ public static class AuthExtensions
     }
 
     /// <summary>
-    /// Throws translated validation exception with custom message
+    /// Throws translated validation exception using language from context
     /// </summary>
     public static void ThrowAuthError(
         this ITranslationService translationService,
+        ILanguageContext languageContext,
         string field,
         string errorKey,
-        string language,
         params object[] args)
     {
-        var message = translationService.Translate(errorKey, language, args);
+        var message = translationService.Translate(errorKey, languageContext.Language, args);
         throw new ValidationException([new ValidationFailure(field, message)]);
     }
 
-    /// <summary>
-    /// Maps Identity error codes to appropriate field names for validation errors
-    /// </summary>
     private static string MapErrorCodeToField(string errorCode) => errorCode switch
     {
         "DuplicateEmail" or "InvalidEmail" => "email",
         "DuplicateUserName" or "InvalidUserName" => "userName",
         "PasswordTooShort" or "PasswordRequiresNonAlphanumeric" or 
-        "PasswordRequiresDigit" or "PasswordRequiresLower" or 
-        "PasswordRequiresUpper" or "PasswordMismatch" or 
-        "UserAlreadyHasPassword" => "password",
+            "PasswordRequiresDigit" or "PasswordRequiresLower" or 
+            "PasswordRequiresUpper" or "PasswordMismatch" or 
+            "UserAlreadyHasPassword" => "password",
         "InvalidToken" => "token",
         "InvalidRoleName" or "DuplicateRoleName" or 
-        "UserAlreadyInRole" or "UserNotInRole" => "role",
+            "UserAlreadyInRole" or "UserNotInRole" => "role",
         "RecoveryCodeRedemptionFailed" => "recoveryCode",
         "LoginAlreadyAssociated" => "login",
         _ => string.Empty
