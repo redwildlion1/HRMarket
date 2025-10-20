@@ -6,6 +6,7 @@ using Common.Email;
 using Common.Media;
 using FluentValidation;
 using HRMarket.Configuration.Exceptions;
+using HRMarket.Configuration.Redis;
 using HRMarket.Configuration.Swagger;
 using HRMarket.Configuration.Translation;
 using HRMarket.Core.Answers;
@@ -31,7 +32,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using Swashbuckle.AspNetCore.Filters;
+using Role = HRMarket.Entities.Auth.Role;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +91,31 @@ builder.Services.AddSwaggerExamplesFromAssemblyOf<Program>();
 // Database Configuration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+
+if (string.IsNullOrEmpty(redisConnectionString))
+{
+    // Development: Use in-memory cache
+    builder.Services.AddDistributedMemoryCache();
+    builder.Services.AddSingleton<IRedisService, InMemoryRedisService>();
+    builder.Logging.AddConsole().SetMinimumLevel(LogLevel.Warning);
+    Console.WriteLine("⚠️  WARNING: Using in-memory cache. Redis not configured.");
+}
+else
+{
+    // Production: Use Redis
+    builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    {
+        var configuration = ConfigurationOptions.Parse(redisConnectionString);
+        configuration.AbortOnConnectFail = false;
+        configuration.ConnectTimeout = 5000;
+        configuration.SyncTimeout = 5000;
+        return ConnectionMultiplexer.Connect(configuration);
+    });
+    builder.Services.AddScoped<IRedisService, RedisService>();
+    Console.WriteLine("✅ Redis configured successfully");
+}
 
 // Translation and Language Services (BEFORE Identity)
 builder.Services.AddScoped<ILanguageContext, LanguageContext>();
