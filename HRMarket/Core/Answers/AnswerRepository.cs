@@ -45,7 +45,7 @@ public class AnswerRepository(ApplicationDbContext context) : IAnswerRepository
                     .ThenInclude(o => o.Translations)
             .Include(a => a.Question)
                 .ThenInclude(q => q.Translations)
-            .Where(a => a.FormSubmissionId == formSubmissionId)
+            .Where(a => a.FormForCategoryId == formSubmissionId)
             .OrderBy(a => a.Question.Order)
             .ToListAsync();
     }
@@ -57,7 +57,7 @@ public class AnswerRepository(ApplicationDbContext context) : IAnswerRepository
             .Include(a => a.SelectedOptions)
                 .ThenInclude(ao => ao.Option)
                     .ThenInclude(o => o.Translations)
-            .FirstOrDefaultAsync(a => a.QuestionId == questionId && a.FormSubmissionId == formSubmissionId);
+            .FirstOrDefaultAsync(a => a.QuestionId == questionId && a.FormForCategoryId == formSubmissionId);
     }
     
     public async Task UpdateAsync(Answer answer)

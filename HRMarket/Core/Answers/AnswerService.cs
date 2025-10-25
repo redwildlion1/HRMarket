@@ -95,7 +95,7 @@ public class AnswerService(
         var answer = new Answer
         {
             QuestionId = dto.QuestionId,
-            FormSubmissionId = formSubmissionId,
+            FormForCategoryId = formSubmissionId,
             StructuredData = string.IsNullOrEmpty(dto.StructuredData) 
                 ? null 
                 : JsonDocument.Parse(dto.StructuredData)

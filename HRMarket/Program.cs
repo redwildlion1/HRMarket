@@ -148,6 +148,7 @@ builder.Services.AddSingleton<TokenSettings>(sp =>
 
 // Answer Services
 builder.Services.AddScoped<IAnswerService, AnswerService>();
+builder.Services.AddScoped<IAnswerRepository, AnswerRepository>();
 
 // Auth Services
 builder.Services.AddScoped<IAuthService, AuthService>();

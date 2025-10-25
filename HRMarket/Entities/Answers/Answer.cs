@@ -13,7 +13,9 @@ public class Answer
     public Guid QuestionId { get; set; }
     public Question Question { get; set; } = null!;
     
-    public Guid FormSubmissionId { get; set; }
+    // Composite FK to FormForCategory
+    public Guid FirmId { get; set; }
+    public Guid CategoryId { get; set; }
     public FormForCategory FormForCategory { get; set; } = null!;
     
     /// <summary>
