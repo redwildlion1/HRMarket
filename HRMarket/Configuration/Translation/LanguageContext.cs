@@ -11,5 +11,5 @@ public interface ILanguageContext
 
 public class LanguageContext : ILanguageContext
 {
-    public string Language { get; set; } = "ro";
+    public string Language { get; set; } = SupportedLanguages.English;
 }

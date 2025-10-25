@@ -50,4 +50,6 @@ public static class AppConstants
     
     public const int MaxIconLength = 255;
     
+    public const int MaxAnswerValueLength = 256;
+    
 }

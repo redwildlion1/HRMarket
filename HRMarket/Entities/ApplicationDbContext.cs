@@ -14,12 +14,17 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Firms.FirmContact> FirmContacts { get; set; }
     public DbSet<Firms.FirmLinks> FirmLinks { get; set; }
     public DbSet<Firms.FirmLocation> FirmLocations { get; set; }
-    public DbSet<Firms.FormSubmission> FormSubmissions { get; set; }
+    public DbSet<Firms.FormForCategory> FormSubmissions { get; set; }
     public DbSet<Medias.Media> Medias { get; set; }
     public DbSet<Medias.FirmMedia> FirmMedias { get; set; }
     public DbSet<Questions.Question> Questions { get; set; }
-    public DbSet<Questions.Option> Options { get; set; }
+    public DbSet<Questions.QuestionOption> QuestionOptions { get; set; }
+    public DbSet<Questions.QuestionTranslation> QuestionTranslations { get; set; }
+    public DbSet<Questions.OptionTranslation> OptionTranslations { get; set; }
     public DbSet<Answers.Answer> Answers { get; set; }
+    public DbSet<Answers.AnswerOption> AnswerOptions { get; set; }
+    public DbSet<Answers.AnswerTranslation> AnswerTranslations { get; set; }
+    
     public DbSet<Categories.Category> Categories { get; set; }
     public DbSet<Categories.Cluster> Clusters { get; set; }
     public DbSet<Categories.Service> Services { get; set; }
@@ -50,9 +55,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         
         // Apply configurations for question and answer entities
         modelBuilder.ApplyConfiguration(new Questions.QuestionConfiguration());
-        modelBuilder.ApplyConfiguration(new Questions.OptionConfiguration());
-        modelBuilder.ApplyConfiguration(new Answers.AnswersConfiguration());
+        modelBuilder.ApplyConfiguration(new Questions.OptionTranslationConfiguration());
+        modelBuilder.ApplyConfiguration(new Questions.QuestionTranslationConfiguration());
+        modelBuilder.ApplyConfiguration(new Questions.QuestionOptionConfiguration());
         
+        modelBuilder.ApplyConfiguration(new Answers.AnswerConfiguration());
+        modelBuilder.ApplyConfiguration(new Answers.AnswerOptionConfiguration());
+        modelBuilder.ApplyConfiguration(new Answers.AnswerTranslationConfiguration());
         // Apply configurations for category entities
         modelBuilder.ApplyConfiguration(new Categories.CategoryConfiguration());
         modelBuilder.ApplyConfiguration(new Categories.ClusterConfiguration()); 

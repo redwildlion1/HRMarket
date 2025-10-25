@@ -1,67 +1,86 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using HRMarket.Configuration.Types;
-using HRMarket.Configuration.UniversalExtensions;
 
 namespace HRMarket.Core.Questions.DTOs;
 
-public class CreateQuestionsForCategoryDto(Guid categoryId, List<PostQuestionDto> questions) : BaseDto
+public class CreateQuestionDto : BaseDto
 {
-    public Guid CategoryId { get; } = categoryId;
-    public List<PostQuestionDto> Questions { get; } = questions;
-}
-
-
-public class PostQuestionDto : IOrderable
-{
+    public QuestionType Type { get; set; }
     public int Order { get; set; }
-    public string Title { get; set; }
-    public string Type { get; set; }
     public bool IsRequired { get; set; }
     public bool IsFilter { get; set; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? ValidationJson { get; set; }
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<PostOptionDto>? Options { get; set; }
-    public List<PostQuestionVariantDto>? Variants { get; set; }
-
-    public PostQuestionDto(
-        string title,
-        string type,
-        bool isRequired,
-        int order,
-        bool isFilter,
-        string? validationJson = null,
-        List<PostOptionDto>? options = null)
-    {
-        Title = title;
-        Type = type;
-        IsRequired = isRequired;
-        Order = order;
-        IsFilter = isFilter;
-        ValidationJson = validationJson;
-        Options = options;
-    }
+    public string ValidationSchema { get; set; } = null!;
+    public List<QuestionTranslationDto> Translations { get; set; } = [];
+    public List<CreateQuestionOptionDto> Options { get; set; } = [];
 }
 
-public class PostQuestionVariantDto(string languageId, string title)
+public class UpdateQuestionDto : BaseDto
 {
-    public string LanguageId { get; set; } = languageId;
-    public string Title { get; set; } = title;
+    public Guid Id { get; set; }
+    public QuestionType Type { get; set; }
+    public int Order { get; set; }
+    public bool IsRequired { get; set; }
+    public bool IsFilter { get; set; }
+    public string ValidationSchema { get; set; } = null!;
+    public List<QuestionTranslationDto> Translations { get; set; } = new();
+    public List<CreateQuestionOptionDto> Options { get; set; } = new();
 }
 
-
-public class PostOptionDto(string text, int order, List<PostOptionVariantDto> variants) : IOrderable
+public class QuestionTranslationDto
 {
-    public string Text { get; set; } = text;
-    public int Order { get; set; } = order;
-    public List<PostOptionVariantDto>? Variants { get; set; } = variants;
+    public string LanguageCode { get; set; } = null!;
+    public string Title { get; set; } = null!;
+    public string? Description { get; set; }
+    public string? Placeholder { get; set; }
 }
 
-public class PostOptionVariantDto(string languageId, string value)
+public class CreateQuestionOptionDto
 {
-    public string LanguageId { get; set; } = languageId;
-    public string Value { get; set; } = value;
+    public string Value { get; set; } = null!;
+    public int Order { get; set; }
+    public List<OptionTranslationDto> Translations { get; set; } = new();
+    public string? Metadata { get; set; }
 }
-    
-    
+
+public class OptionTranslationDto
+{
+    public string LanguageCode { get; set; } = null!;
+    public string Label { get; set; } = null!;
+    public string? Description { get; set; }
+}
+
+public class BulkCreateQuestionsDto : BaseDto
+{
+    public Guid CategoryId { get; set; }
+    public List<CreateQuestionDto> Questions { get; set; } = new();
+}
+
+public class QuestionDto
+{
+    public Guid Id { get; set; }
+    public QuestionType Type { get; set; }
+    public int Order { get; set; }
+    public bool IsRequired { get; set; }
+    public string Title { get; set; } = null!;
+    public string? Description { get; set; }
+    public string? Placeholder { get; set; }
+    public JsonDocument ValidationSchema { get; set; } = null!;
+    public List<QuestionOptionDto> Options { get; set; } = new();
+}
+
+public class QuestionOptionDto
+{
+    public Guid Id { get; set; }
+    public string Value { get; set; } = null!;
+    public int Order { get; set; }
+    public string Label { get; set; } = null!;
+    public string? Description { get; set; }
+    public JsonDocument? Metadata { get; set; }
+}
+
+public class QuestionListDto
+{
+    public Guid CategoryId { get; set; }
+    public string CategoryName { get; set; } = null!;
+    public List<QuestionDto> Questions { get; set; } = new();
+}

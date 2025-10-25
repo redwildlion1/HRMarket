@@ -61,6 +61,14 @@ public class FirmAnswerDto
     public Guid Id { get; set; }
     public string Question { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
+    public List<FirmAnswerTranslationDto> Translations { get; set; } = [];
+    
+}
+
+public class FirmAnswerTranslationDto
+{
+    public string LanguageCode { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
 
 public class FirmReviewListDto

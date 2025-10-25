@@ -66,14 +66,15 @@ public class AdminService(
         var firm = await context.Firms
             .Include(f => f.Contact)
             .Include(f => f.Links)
-            .Include(f => f.Location)
-            .ThenInclude(l => l!.Country)
-            .Include(f => f.Location)
-            .ThenInclude(l => l!.County)
-            .Include(f => f.Media)
-            .ThenInclude(fm => fm.Media)
-            .Include(f => f.FormSubmission)
-            .ThenInclude(fs => fs!.Answers)
+            .Include(f => f.Location).ThenInclude(loc => loc!.Country)
+            .Include(f => f.Location).ThenInclude(loc => loc!.County)
+            .Include(f => f.Media).ThenInclude(fm => fm.Media)
+            // include answers -> selected options
+            .Include(f => f.Forms).ThenInclude(form => form.Answers).ThenInclude(answer => answer.SelectedOptions).ThenInclude( so => so.Option)
+            // include answers -> question -> translations
+            .Include(f => f.Forms).ThenInclude(form => form.Answers).ThenInclude(answer => answer.Question).ThenInclude(q => q.Translations)
+            // include answers -> translations
+            .Include(f => f.Forms).ThenInclude(form => form.Answers).ThenInclude(answer => answer.Translations) 
             .FirstOrDefaultAsync(f => f.Id == firmId);
 
         if (firm == null)
@@ -88,12 +89,11 @@ public class AdminService(
             firm.Description
         };
 
-        if (firm.FormSubmission?.Answers != null)
-        {
-            textsToCheck.AddRange(firm.FormSubmission.Answers
+        textsToCheck.AddRange(
+            firm.Forms
+                .SelectMany(f => f.Answers)
                 .Where(a => !string.IsNullOrWhiteSpace(a.Value))
                 .Select(a => a.Value!));
-        }
 
         var profanityResult = await profanityService.CheckMultipleTextsAsync(textsToCheck);
 
@@ -118,7 +118,6 @@ public class AdminService(
             LocationPostalCode = firm.Location?.PostalCode,
             CountryName = firm.Location?.Country?.Name ?? string.Empty,
             CountyName = firm.Location?.County?.Name ?? string.Empty,
-            IsFormComplete = firm.FormSubmission?.IsCompleted ?? false,
             ModerationResult = profanityResult,
             Media = firm.Media.Select(fm => new FirmMediaDto
             {
@@ -132,12 +131,22 @@ public class AdminService(
                 Status = fm.Media.Status,
                 CreatedAt = fm.Media.CreatedAt
             }).ToList(),
-            Answers = firm.FormSubmission?.Answers.Select(a => new FirmAnswerDto
-            {
-                Id = a.Id,
-                Question = a.Question,
-                Value = a.Value ?? string.Empty
-            }).ToList() ?? []
+            Answers = firm.Forms
+                .SelectMany(f => f.Answers)
+                .Select(a => new FirmAnswerDto
+                {
+                    Id = a.Id,
+                    Question = a.Question.Translations.First().Title, // Assuming at least one translation exists
+                    Value = a.Value ?? a.Question.Type.ToString(),
+                    Translations = a.Translations.Select(t => new FirmAnswerTranslationDto
+                    {
+                        LanguageCode = t.LanguageCode,
+                        Value = t.Value
+                    }).ToList(),
+                    
+                })
+                .Where(a => !string.IsNullOrWhiteSpace(a.Value))
+                .ToList()
         };
 
         // Cache the result

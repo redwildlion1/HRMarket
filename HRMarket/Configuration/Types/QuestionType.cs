@@ -1,37 +1,38 @@
+// HRMarket/Configuration/Types/QuestionType.cs
 namespace HRMarket.Configuration.Types;
 
+/// <summary>
+/// All supported question types
+/// </summary>
 public enum QuestionType
 {
-    String,
-    Text,
-    Number,
-    Date,
-    SingleSelect,
-    MultiSelect
-}
-
-public static class QuestionTypeExtensions
-{
-    private static readonly Dictionary<QuestionType, Type> TypeMap = new()
-    {
-        { QuestionType.String, typeof(string) },
-        { QuestionType.Text, typeof(string) },
-        { QuestionType.Number, typeof(int) },
-        { QuestionType.Date, typeof(DateOnly) },
-    };
-
-    private static void IsValidValue(QuestionType questionType, object? value)
-    {
-        if (!TypeMap.TryGetValue(questionType, out var expectedType))
-            throw new ArgumentException($"Unrecognized QuestionType: {questionType}");
-        if (value != null && !expectedType.IsInstanceOfType(value))
-            throw new ArgumentException($"Value does not match expected type {expectedType.Name} for {questionType}");
-    }
-
-    public static void IsValidValueByTypeString(string typeString, object? value)
-    {
-        if (!Enum.TryParse<QuestionType>(typeString, ignoreCase: true, out var questionType))
-            throw new ArgumentException($"Unrecognized type string: {typeString}");
-        IsValidValue(questionType, value);
-    }
+    /// <summary>
+    /// Short text input (single line)
+    /// </summary>
+    String = 1,
+    
+    /// <summary>
+    /// Long text input (multi-line)
+    /// </summary>
+    Text = 2,
+    
+    /// <summary>
+    /// Numeric input
+    /// </summary>
+    Number = 3,
+    
+    /// <summary>
+    /// Date input
+    /// </summary>
+    Date = 4,
+    
+    /// <summary>
+    /// Single choice from options (radio buttons)
+    /// </summary>
+    SingleSelect = 5,
+    
+    /// <summary>
+    /// Multiple choices from options (checkboxes)
+    /// </summary>
+    MultiSelect = 6
 }

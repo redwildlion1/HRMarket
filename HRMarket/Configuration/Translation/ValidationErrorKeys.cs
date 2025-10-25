@@ -20,6 +20,12 @@ public static class ValidationErrorKeys
     public const string InvalidDate = "Validation.InvalidDate";
     public const string DateMustBeInFuture = "Validation.DateMustBeInFuture";
     public const string DateMustBeInPast = "Validation.DateMustBeInPast";
+    public const string InvalidFormat = "validation.invalid_format";
+    public const string MinValue = "validation.min_value";
+    public const string MaxValue = "validation.max_value";
+    public const string InvalidOption = "validation.invalid_option";
+    public const string MinSelections = "validation.min_selections";
+    public const string MaxSelections = "validation.max_selections";
 
     // Firm validation
     public static class Firm

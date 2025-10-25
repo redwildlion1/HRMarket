@@ -6,6 +6,7 @@ public interface ITranslationService
 {
     string Translate(string key, string language = "ro", params object[] args);
     string TranslateValidationError(string errorKey, string language = "ro", params object[] args);
+    Task<string> TranslateTextAsync(string value, string requestLanguage, string english);
 }
 
 public class TranslationService : ITranslationService
@@ -19,12 +20,12 @@ public class TranslationService : ITranslationService
         LoadTranslations();
     }
 
-    public string Translate(string key, string language = "ro", params object[] args)
+    public string Translate(string key, string language = SupportedLanguages.English, params object[] args)
     {
         if (!_translations.TryGetValue(language, out var translations))
         {
-            _logger.LogWarning("Language {Language} not found, falling back to Romanian", language);
-            language = "ro";
+            _logger.LogWarning("Language {Language} not found, falling back to English", language);
+            language = SupportedLanguages.English;
             _translations.TryGetValue(language, out translations);
         }
 
@@ -45,15 +46,20 @@ public class TranslationService : ITranslationService
         }
     }
 
-    public string TranslateValidationError(string errorKey, string language = "ro", params object[] args)
+    public string TranslateValidationError(string errorKey, string language = SupportedLanguages.English, params object[] args)
     {
         return Translate(errorKey, language, args);
+    }
+
+    public Task<string> TranslateTextAsync(string value, string requestLanguage, string english)
+    {
+        throw new NotImplementedException();    
     }
 
     private void LoadTranslations()
     {
         // Romanian translations
-        _translations["ro"] = new Dictionary<string, string>
+        _translations[SupportedLanguages.Romanian] = new Dictionary<string, string>
         {
             // General validation errors
             [ValidationErrorKeys.Required] = "Câmpul \"{0}\" este obligatoriu.",
@@ -70,6 +76,12 @@ public class TranslationService : ITranslationService
             [ValidationErrorKeys.InvalidDate] = "Câmpul \"{0}\" conține o dată invalidă.",
             [ValidationErrorKeys.DateMustBeInFuture] = "Câmpul \"{0}\" trebuie să fie o dată în viitor.",
             [ValidationErrorKeys.DateMustBeInPast] = "Câmpul \"{0}\" trebuie să fie o dată în trecut.",
+            [ValidationErrorKeys.InvalidFormat] = "{0} are un format invalid",
+            [ValidationErrorKeys.MinValue] = "{0} trebuie să fie cel puțin {1}",
+            [ValidationErrorKeys.MaxValue] = "{0} trebuie să fie cel mult {1}",
+            [ValidationErrorKeys.InvalidOption] = "Una sau mai multe opțiuni selectate sunt invalide",
+            [ValidationErrorKeys.MinSelections] = "Trebuie să selectați cel puțin {0} opțiune/opțiuni",
+            [ValidationErrorKeys.MaxSelections] = "Puteți selecta cel mult {0} opțiune/opțiuni",
 
             // Firm validation
             [ValidationErrorKeys.Firm.TypeInvalid] = "Tipul firmei nu este valid.",
@@ -146,7 +158,7 @@ public class TranslationService : ITranslationService
 
 
         // English translations
-        _translations["en"] = new Dictionary<string, string>
+        _translations[SupportedLanguages.English] = new Dictionary<string, string>
         {
             // General validation errors
             [ValidationErrorKeys.Required] = "The field \"{0}\" is required.",
@@ -163,6 +175,14 @@ public class TranslationService : ITranslationService
             [ValidationErrorKeys.InvalidDate] = "The field \"{0}\" contains an invalid date.",
             [ValidationErrorKeys.DateMustBeInFuture] = "The field \"{0}\" must be a date in the future.",
             [ValidationErrorKeys.DateMustBeInPast] = "The field \"{0}\" must be a date in the past.",
+            [ValidationErrorKeys.InvalidFormat] = "{0} has an invalid format",
+            [ValidationErrorKeys.MinValue] = "{0} must be at least {1}",
+            [ValidationErrorKeys.MaxValue] = "{0} must be at most {1}",
+            [ValidationErrorKeys.InvalidOption] = "One or more selected options are invalid",
+            [ValidationErrorKeys.MinSelections] = "You must select at least {0} option(s)",
+            [ValidationErrorKeys.MaxSelections] = "You can select at most {0} option(s)",
+            
+        
 
             // Firm validation
             [ValidationErrorKeys.Firm.TypeInvalid] = "The firm type is not valid.",

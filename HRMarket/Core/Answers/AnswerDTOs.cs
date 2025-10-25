@@ -1,81 +1,51 @@
-// HRMarket/Core/Answers/AnswerDTOs.cs
-using System.Text.Json.Serialization;
 using HRMarket.Configuration.Types;
 
 namespace HRMarket.Core.Answers;
 
-[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-[JsonDerivedType(typeof(BasicAnswerDto), nameof(QuestionType.String))]
-[JsonDerivedType(typeof(BasicAnswerDto), nameof(QuestionType.Text))]
-[JsonDerivedType(typeof(BasicAnswerDto), nameof(QuestionType.Number))]
-[JsonDerivedType(typeof(BasicAnswerDto), nameof(QuestionType.Date))]
-[JsonDerivedType(typeof(SingleChoiceAnswerDto), nameof(QuestionType.SingleSelect))]
-[JsonDerivedType(typeof(MultiChoiceAnswerDto), nameof(QuestionType.MultiSelect))]
-public abstract class AnswerDto : BaseDto
+public class SubmitAnswerDto : BaseDto
 {
     public Guid QuestionId { get; set; }
-
-    protected AnswerDto()
-    {
-    }
-
-    protected AnswerDto(Guid questionId)
-    {
-        QuestionId = questionId;
-    }
+    public string? Value { get; set; }
+    public List<Guid> SelectedOptionIds { get; set; } = new();
+    public string? StructuredData { get; set; }
 }
 
-public class BasicAnswerDto : AnswerDto
+public class SubmitAnswersDto : BaseDto
 {
-    public string Response { get; set; } = string.Empty;
-
-    public BasicAnswerDto()
-    {
-    }
-
-    public BasicAnswerDto(Guid questionId, string response) 
-        : base(questionId)
-    {
-        Response = response;
-    }
+    public Guid CategoryId { get; set; }
+    public List<SubmitAnswerDto> Answers { get; set; } = new();
 }
 
-public class SingleChoiceAnswerDto : AnswerDto
+public class AnswerDto
 {
-    public Guid SelectedOption { get; set; }
-
-    public SingleChoiceAnswerDto()
-    {
-    }
-
-    public SingleChoiceAnswerDto(Guid questionId, Guid selectedOption)
-        : base(questionId)
-    {
-        SelectedOption = selectedOption;
-    }
+    public Guid Id { get; set; }
+    public Guid QuestionId { get; set; }
+    public QuestionType QuestionType { get; set; }
+    public string? Value { get; set; }
+    public List<SelectedOptionDto> SelectedOptions { get; set; } = new();
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public bool NeedsUpdating { get; set; }
 }
 
-public class MultiChoiceAnswerDto : AnswerDto
+public class SelectedOptionDto
 {
-    public ICollection<Guid> SelectedOptions { get; set; } = new List<Guid>();
-
-    public MultiChoiceAnswerDto()
-    {
-    }
-
-    public MultiChoiceAnswerDto(Guid questionId, ICollection<Guid> selectedOptions)
-        : base(questionId)
-    {
-        SelectedOptions = selectedOptions;
-    }
+    public Guid OptionId { get; set; }
+    public string Value { get; set; } = null!;
+    public string Label { get; set; } = null!;
+    public DateTime SelectedAt { get; set; }
 }
 
-public class CheckAnswersResult
+public class SubmitAnswersResultDto
 {
-    public bool IsComplete { get; set; }
+    public bool IsValid { get; set; }
+    public List<AnswerValidationError> Errors { get; set; } = [];
+    public List<Guid> CreatedAnswerIds { get; set; } = [];
+}
 
-    public CheckAnswersResult(bool isComplete = true)
-    {
-        IsComplete = isComplete;
-    }
+public class AnswerValidationError
+{
+    public Guid QuestionId { get; set; }
+    public string QuestionTitle { get; set; } = null!;
+    public List<string> ErrorMessages { get; set; } = [];
 }

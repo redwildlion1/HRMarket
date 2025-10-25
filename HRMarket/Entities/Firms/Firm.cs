@@ -28,7 +28,7 @@ public class Firm
     public List<Guid> CategoryIds { get; set; } = [];
     public List<Category>? Categories { get; set; }
     
-    public FormSubmission? FormSubmission { get; set; }
+    public List<FormForCategory> Forms { get; set; } = [];
     public FirmContact? Contact { get; set; }
     public FirmLinks? Links { get; set; }
     public FirmLocation? Location { get; set; }

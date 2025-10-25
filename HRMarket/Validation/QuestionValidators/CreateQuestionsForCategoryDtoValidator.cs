@@ -1,156 +1,57 @@
 ﻿using FluentValidation;
+using HRMarket.Configuration;
 using HRMarket.Configuration.Translation;
 using HRMarket.Configuration.Types;
 using HRMarket.Core.Questions.DTOs;
-using Json.Schema;
 
 namespace HRMarket.Validation.QuestionValidators;
 
-public class CreateQuestionsForCategoryDtoValidator : BaseValidator<CreateQuestionsForCategoryDto>
+public class CreateQuestionDtoValidator : AbstractValidator<CreateQuestionDto>
 {
-    public CreateQuestionsForCategoryDtoValidator(
-        ITranslationService translationService,
-        ILanguageContext languageContext) 
-        : base(translationService, languageContext)
+    public CreateQuestionDtoValidator()
     {
-        RuleFor(x => x.CategoryId)
-            .NotEmpty()
-            .WithMessage(Translate(ValidationErrorKeys.Required, "CategoryId"));
-
-        RuleFor(x => x.Questions)
-            .NotEmpty()
-            .WithMessage(Translate(ValidationErrorKeys.Required, "Questions"))
-            .Must(HaveUniqueOrders)
-            .WithMessage(Translate(ValidationErrorKeys.Question.DuplicateOrder))
-            .Must(HaveSequentialOrders)
-            .WithMessage(Translate(ValidationErrorKeys.Question.OrderGaps));
-
-        RuleForEach(x => x.Questions)
-            .SetValidator(new PostQuestionDtoValidator(TranslationService, LanguageContext));
-    }
-
-    private static bool HaveUniqueOrders(List<PostQuestionDto> questions)
-    {
-        var orders = questions.Select(q => q.Order).ToList();
-        return orders.Count == orders.Distinct().Count();
-    }
-
-    private static bool HaveSequentialOrders(List<PostQuestionDto> questions)
-    {
-        var orders = questions.Select(q => q.Order).OrderBy(o => o).ToList();
-        return !orders.Where((t, i) => t != i).Any();
-    }
-}
-
-public class PostQuestionDtoValidator : AbstractValidator<PostQuestionDto>
-{
-    private readonly ITranslationService _translationService;
-    private readonly ILanguageContext _languageContext;
-
-    public PostQuestionDtoValidator(
-        ITranslationService translationService,
-        ILanguageContext languageContext)
-    {
-        _translationService = translationService;
-        _languageContext = languageContext;
-
-        RuleFor(x => x.Title)
-            .NotEmpty()
-            .WithMessage(T(ValidationErrorKeys.Required, "Title"));
-
         RuleFor(x => x.Type)
-            .Must(BeValidQuestionType)
-            .WithMessage(T(ValidationErrorKeys.Question.TypeInvalid));
-
+            .IsInEnum()
+            .WithMessage("Invalid question type");
+        
         RuleFor(x => x.Order)
             .GreaterThanOrEqualTo(0)
-            .WithMessage(T(ValidationErrorKeys.MustBePositive, "Order"));
-
-        When(x => x.Type == nameof(QuestionType.SingleSelect), () =>
-        {
-            RuleFor(x => x.Options)
-                .NotNull()
-                .WithMessage(T(ValidationErrorKeys.Question.OptionsRequired, "SingleSelect"))
-                .Must(options => options != null && options.Count >= 2)
-                .WithMessage(T(ValidationErrorKeys.Question.OptionsMinCount, "SingleSelect", 2))
-                .DependentRules(() =>
-                {
-                    RuleFor(x => x.Options)
-                        .Must(HaveUniqueOrders!)
-                        .WithMessage(T(ValidationErrorKeys.Option.DuplicateOrder))
-                        .Must(HaveSequentialOrders!)
-                        .WithMessage(T(ValidationErrorKeys.Option.OrderGaps));
-                    
-                    RuleForEach(x => x.Options)
-                        .SetValidator(new PostOptionDtoValidator(_translationService, _languageContext));
-                });
-        });
-
-        When(x => x.Type == nameof(QuestionType.MultiSelect), () =>
-        {
-            RuleFor(x => x.Options)
-                .NotNull()
-                .WithMessage(T(ValidationErrorKeys.Question.OptionsRequired, "MultiSelect"))
-                .Must(options => options != null && options.Count >= 2)
-                .WithMessage(T(ValidationErrorKeys.Question.OptionsMinCount, "MultiSelect", 2))
-                .DependentRules(() =>
-                {
-                    RuleFor(x => x.Options)
-                        .Must(HaveUniqueOrders!)
-                        .WithMessage(T(ValidationErrorKeys.Option.DuplicateOrder))
-                        .Must(HaveSequentialOrders!)
-                        .WithMessage(T(ValidationErrorKeys.Option.OrderGaps));
-                    
-                    RuleForEach(x => x.Options)
-                        .SetValidator(new PostOptionDtoValidator(_translationService, _languageContext));
-                });
-        });
-
-        When(x => x.Type != nameof(QuestionType.SingleSelect) && x.Type != nameof(QuestionType.MultiSelect), () =>
-        {
-            RuleFor(x => x.Options)
-                .Must(options => options == null || options.Count == 0)
-                .WithMessage(x => T(ValidationErrorKeys.Question.OptionsShouldBeEmpty, x.Type));
-        });
-
-        When(x => IsBasicQuestionType(x.Type) && !string.IsNullOrWhiteSpace(x.ValidationJson), () =>
-        {
-            RuleFor(x => x.ValidationJson)
-                .Must(BeValidJsonSchema)
-                .WithMessage(T(ValidationErrorKeys.Question.InvalidJsonSchema));
-        });
-
-        When(x => x.Variants is { Count: > 0 }, () =>
-        {
-            RuleFor(x => x.Variants)
-                .Must(HaveUniqueLanguages!)
-                .WithMessage(T(ValidationErrorKeys.Question.VariantDuplicateLanguage, "{0}"));
-            
-            RuleForEach(x => x.Variants)
-                .SetValidator(new PostQuestionVariantDtoValidator(_translationService, _languageContext));
-        });
+            .WithMessage("Order must be non-negative");
+        
+        RuleFor(x => x.ValidationSchema)
+            .NotEmpty()
+            .WithMessage("Validation schema is required")
+            .Must(BeValidJson)
+            .WithMessage("Validation schema must be valid JSON");
+        
+        RuleFor(x => x.Translations)
+            .NotEmpty()
+            .WithMessage("At least one translation is required")
+            .Must(HaveAllSupportedLanguages)
+            .WithMessage($"Translations for all supported languages are required: {string.Join(", ", SupportedLanguages.All)}");
+        
+        RuleForEach(x => x.Translations)
+            .SetValidator(new QuestionTranslationDtoValidator());
+        
+        RuleFor(x => x.Options)
+            .NotEmpty()
+            .When(x => x.Type == QuestionType.SingleSelect || x.Type == QuestionType.MultiSelect)
+            .WithMessage("Options are required for choice-based questions");
+        
+        RuleFor(x => x.Options)
+            .Empty()
+            .When(x => x.Type != QuestionType.SingleSelect && x.Type != QuestionType.MultiSelect)
+            .WithMessage("Options should only be provided for choice-based questions");
+        
+        RuleForEach(x => x.Options)
+            .SetValidator(new CreateQuestionOptionDtoValidator());
     }
-
-    private string T(string key, params object[] args) => 
-        _translationService.TranslateValidationError(key, _languageContext.Language, args);
-
-    private static bool BeValidQuestionType(string type) => 
-        Enum.TryParse<QuestionType>(type, true, out _);
-
-    private static bool IsBasicQuestionType(string type)
+    
+    private bool BeValidJson(string json)
     {
-        if (!Enum.TryParse<QuestionType>(type, true, out var questionType))
-            return false;
-        return questionType is QuestionType.String or QuestionType.Text or QuestionType.Number or QuestionType.Date;
-    }
-
-    private static bool BeValidJsonSchema(string? validationJson)
-    {
-        if (string.IsNullOrWhiteSpace(validationJson) || validationJson == "null")
-            return true;
         try
         {
-            _ = JsonSchema.FromText(validationJson);
+            System.Text.Json.JsonDocument.Parse(json);
             return true;
         }
         catch
@@ -158,99 +59,111 @@ public class PostQuestionDtoValidator : AbstractValidator<PostQuestionDto>
             return false;
         }
     }
-
-    private static bool HaveUniqueOrders(List<PostOptionDto> options) => 
-        options.Select(o => o.Order).Distinct().Count() == options.Count;
-
-    private static bool HaveSequentialOrders(List<PostOptionDto> options)
+    
+    private bool HaveAllSupportedLanguages(List<QuestionTranslationDto> translations)
     {
-        var orders = options.Select(o => o.Order).OrderBy(o => o).ToList();
-        return !orders.Where((t, i) => t != i).Any();
+        var providedLanguages = translations.Select(t => t.LanguageCode.ToLower()).ToHashSet();
+        return SupportedLanguages.All.All(lang => providedLanguages.Contains(lang));
     }
-
-    private static bool HaveUniqueLanguages(List<PostQuestionVariantDto> variants) => 
-        variants.Select(v => v.LanguageId).Distinct().Count() == variants.Count;
 }
 
-public class PostOptionDtoValidator : AbstractValidator<PostOptionDto>
+public class QuestionTranslationDtoValidator : AbstractValidator<QuestionTranslationDto>
 {
-    private readonly ITranslationService _translationService;
-    private readonly ILanguageContext _languageContext;
-
-    public PostOptionDtoValidator(ITranslationService translationService, ILanguageContext languageContext)
+    public QuestionTranslationDtoValidator()
     {
-        _translationService = translationService;
-        _languageContext = languageContext;
-
-        RuleFor(x => x.Text)
+        RuleFor(x => x.LanguageCode)
             .NotEmpty()
-            .WithMessage(T(ValidationErrorKeys.Required, "Text"));
-
-        RuleFor(x => x.Order)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage(T(ValidationErrorKeys.MustBePositive, "Order"));
-
-        When(x => x.Variants != null && x.Variants.Count > 0, () =>
-        {
-            RuleFor(x => x.Variants)
-                .Must(variants => variants!.Select(v => v.LanguageId).Distinct().Count() == variants!.Count)
-                .WithMessage(T(ValidationErrorKeys.Question.VariantDuplicateLanguage, "{0}"));
-            
-            RuleForEach(x => x.Variants)
-                .SetValidator(new PostOptionVariantDtoValidator(_translationService, _languageContext));
-        });
-    }
-
-    private string T(string key, params object[] args) => 
-        _translationService.TranslateValidationError(key, _languageContext.Language, args);
-}
-
-public class PostQuestionVariantDtoValidator : AbstractValidator<PostQuestionVariantDto>
-{
-    private readonly ITranslationService _translationService;
-    private readonly ILanguageContext _languageContext;
-
-    public PostQuestionVariantDtoValidator(ITranslationService translationService, ILanguageContext languageContext)
-    {
-        _translationService = translationService;
-        _languageContext = languageContext;
-
-        RuleFor(x => x.LanguageId)
-            .NotEmpty()
-            .WithMessage(T(ValidationErrorKeys.Required, "LanguageId"))
-            .MaximumLength(10)
-            .WithMessage(T(ValidationErrorKeys.MaxLength, "LanguageId", 10));
-
+            .WithMessage("Language code is required")
+            .Must(SupportedLanguages.IsSupported)
+            .WithMessage($"Language must be one of: {string.Join(", ", SupportedLanguages.All)}");
+        
         RuleFor(x => x.Title)
             .NotEmpty()
-            .WithMessage(T(ValidationErrorKeys.Required, "Title"));
+            .WithMessage("Title is required")
+            .MaximumLength(AppConstants.MaxQuestionTitleLength)
+            .WithMessage($"Title must not exceed {AppConstants.MaxQuestionTitleLength} characters");
+        
+        RuleFor(x => x.Description)
+            .MaximumLength(AppConstants.MaxDescriptionLength)
+            .When(x => !string.IsNullOrEmpty(x.Description))
+            .WithMessage($"Description must not exceed {AppConstants.MaxDescriptionLength} characters");
+        
+        RuleFor(x => x.Placeholder)
+            .MaximumLength(200)
+            .When(x => !string.IsNullOrEmpty(x.Placeholder))
+            .WithMessage("Placeholder must not exceed 200 characters");
     }
-
-    private string T(string key, params object[] args) => 
-        _translationService.TranslateValidationError(key, _languageContext.Language, args);
 }
 
-public class PostOptionVariantDtoValidator : AbstractValidator<PostOptionVariantDto>
+public class CreateQuestionOptionDtoValidator : AbstractValidator<CreateQuestionOptionDto>
 {
-    private readonly ITranslationService _translationService;
-    private readonly ILanguageContext _languageContext;
-
-    public PostOptionVariantDtoValidator(ITranslationService translationService, ILanguageContext languageContext)
+    public CreateQuestionOptionDtoValidator()
     {
-        _translationService = translationService;
-        _languageContext = languageContext;
-
-        RuleFor(x => x.LanguageId)
-            .NotEmpty()
-            .WithMessage(T(ValidationErrorKeys.Required, "LanguageId"))
-            .MaximumLength(10)
-            .WithMessage(T(ValidationErrorKeys.MaxLength, "LanguageId", 10));
-
         RuleFor(x => x.Value)
             .NotEmpty()
-            .WithMessage(T(ValidationErrorKeys.Required, "Value"));
+            .WithMessage("Option value is required")
+            .MaximumLength(AppConstants.MaxTokenLength)
+            .WithMessage($"Value must not exceed {AppConstants.MaxTokenLength} characters");
+        
+        RuleFor(x => x.Order)
+            .GreaterThanOrEqualTo(0)
+            .WithMessage("Order must be non-negative");
+        
+        RuleFor(x => x.Translations)
+            .NotEmpty()
+            .WithMessage("At least one translation is required")
+            .Must(HaveAllSupportedLanguages)
+            .WithMessage($"Translations for all supported languages are required: {string.Join(", ", SupportedLanguages.All)}");
+        
+        RuleForEach(x => x.Translations)
+            .SetValidator(new OptionTranslationDtoValidator());
+        
+        RuleFor(x => x.Metadata)
+            .Must(BeValidJsonOrNull)
+            .When(x => !string.IsNullOrEmpty(x.Metadata))
+            .WithMessage("Metadata must be valid JSON");
     }
     
-    private string T(string key, params object[] args) => 
-        _translationService.TranslateValidationError(key, _languageContext.Language, args);
+    private bool HaveAllSupportedLanguages(List<OptionTranslationDto> translations)
+    {
+        var providedLanguages = translations.Select(t => t.LanguageCode.ToLower()).ToHashSet();
+        return SupportedLanguages.All.All(lang => providedLanguages.Contains(lang));
+    }
+    
+    private bool BeValidJsonOrNull(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) return true;
+        try
+        {
+            System.Text.Json.JsonDocument.Parse(json);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}
+
+public class OptionTranslationDtoValidator : AbstractValidator<OptionTranslationDto>
+{
+    public OptionTranslationDtoValidator()
+    {
+        RuleFor(x => x.LanguageCode)
+            .NotEmpty()
+            .WithMessage("Language code is required")
+            .Must(SupportedLanguages.IsSupported)
+            .WithMessage($"Language must be one of: {string.Join(", ", SupportedLanguages.All)}");
+        
+        RuleFor(x => x.Label)
+            .NotEmpty()
+            .WithMessage("Label is required")
+            .MaximumLength(AppConstants.MaxOptionTextLength)
+            .WithMessage($"Label must not exceed {AppConstants.MaxOptionTextLength} characters");
+        
+        RuleFor(x => x.Description)
+            .MaximumLength(300)
+            .When(x => !string.IsNullOrEmpty(x.Description))
+            .WithMessage("Description must not exceed 300 characters");
+    }
 }

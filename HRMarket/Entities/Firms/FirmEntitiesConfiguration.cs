@@ -28,9 +28,9 @@ public class FirmConfiguration : IEntityTypeConfiguration<Firm>
             .HasForeignKey<FirmLocation>(l => l.FirmId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(f => f.FormSubmission)
+        builder.HasMany(f => f.Forms)
             .WithOne(fs => fs.Firm)
-            .HasForeignKey<FormSubmission>(fs => fs.FirmId)
+            .HasForeignKey(fs => fs.FirmId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(f => f.Cui)
@@ -136,18 +136,22 @@ public class FirmLocationConfiguration : IEntityTypeConfiguration<FirmLocation>
 }
 
 // FormSubmission configuration
-public class FormSubmissionConfiguration : IEntityTypeConfiguration<FormSubmission>
+public class FormSubmissionConfiguration : IEntityTypeConfiguration<FormForCategory>
 {
-    public void Configure(EntityTypeBuilder<FormSubmission> builder)
+    public void Configure(EntityTypeBuilder<FormForCategory> builder)
     {
-        builder.HasKey(fs => fs.FirmId);
+        builder.HasKey(fs => new { fs.FirmId, fs.CategoryId });
         builder.HasMany(fs => fs.Answers)
             .WithOne()
             .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(fs => fs.Firm)
-            .WithOne(f => f.FormSubmission)
-            .HasForeignKey<FormSubmission>(fs => fs.FirmId)
+            .WithMany(f => f.Forms)
+            .HasForeignKey(fs => fs.FirmId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(fs => fs.Category)
+            .WithMany()
+            .HasForeignKey(fs => fs.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
         
         builder.Property(fs => fs.UpdatedAt)
             .HasDefaultValueSql("CURRENT_TIMESTAMP");

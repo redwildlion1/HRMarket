@@ -1,80 +1,80 @@
-using HRMarket.Entities.Questions;
+using HRMarket.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HRMarket.Entities.Answers;
 
-public class AnswersConfiguration : IEntityTypeConfiguration<Answer>
+public class AnswerConfiguration : IEntityTypeConfiguration<Answer>
 {
     public void Configure(EntityTypeBuilder<Answer> builder)
     {
         builder.HasKey(a => a.Id);
         builder.Property(a => a.Id).HasDefaultValueSql("uuid_generate_v4()");
         
-        builder.Property(a => a.Question)
-            .IsRequired()
-            .HasMaxLength(500);
-        builder.Property(a => a.QuestionId)
-            .IsRequired();
+        builder.Property(a => a.Value).HasMaxLength(AppConstants.MaxAnswerValueLength);
+        builder.Property(a => a.NeedsUpdating).HasDefaultValue(false);
+        builder.Property(a => a.StructuredData).HasColumnType("jsonb");
         
-        builder.Property(a => a.NeedsUpdating)
-            .IsRequired()
-            .HasDefaultValue(false);
+        builder.HasOne(a => a.Question)
+            .WithMany()
+            .HasForeignKey(a => a.QuestionId)
+            .OnDelete(DeleteBehavior.Restrict);
         
-        builder.Property(a => a.Value)
-            .HasMaxLength(255);
-        
-        builder.Property(a => a.FormSubmissionId)
-            .IsRequired();
-        
-        builder.HasOne(a => a.FormSubmission)
+        builder.HasOne(a => a.FormForCategory)
             .WithMany(fs => fs.Answers)
             .HasForeignKey(a => a.FormSubmissionId)
             .OnDelete(DeleteBehavior.Cascade);
         
-        builder.HasMany(a => a.SelectedOptions)
-            .WithMany(o => o.Answers)
-            .UsingEntity<Dictionary<string, object>>(
-                "AnswerOption",
-                j => j
-                    .HasOne<Option>()
-                    .WithMany()
-                    .HasForeignKey("OptionId")
-                    .OnDelete(DeleteBehavior.Cascade),
-                j => j
-                    .HasOne<Answer>()
-                    .WithMany()
-                    .HasForeignKey("AnswerId")
-                    .OnDelete(DeleteBehavior.Cascade),
-                j =>
-                {
-                    j.HasKey("AnswerId", "OptionId");
-                    j.ToTable("AnswerOptions");
-                });
+        builder.HasMany(a => a.Translations)
+            .WithOne(t => t.Answer)
+            .HasForeignKey(t => t.AnswerId)
+            .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasIndex(a => new { a.FormSubmissionId, a.QuestionId }).IsUnique();
+        builder.HasIndex(a => a.NeedsUpdating);
     }
 }
 
-public class AnswerVariantConfiguration : IEntityTypeConfiguration<AnswerVariant>
+public class AnswerOptionConfiguration : IEntityTypeConfiguration<AnswerOption>
 {
-    public void Configure(EntityTypeBuilder<AnswerVariant> builder)
+    public void Configure(EntityTypeBuilder<AnswerOption> builder)
     {
-        builder.HasKey(av => av.Id);
-        builder.Property(av => av.Id).HasDefaultValueSql("uuid_generate_v4())");
+        builder.HasKey(ao => new { ao.AnswerId, ao.OptionId });
         
-        builder.Property(av => av.Value)
-            .IsRequired()
-            .HasMaxLength(255);
+        builder.HasOne(ao => ao.Answer)
+            .WithMany(a => a.SelectedOptions)
+            .HasForeignKey(ao => ao.AnswerId)
+            .OnDelete(DeleteBehavior.Cascade);
         
-        builder.Property(av => av.AnswerId)
-            .IsRequired();
+        builder.HasOne(ao => ao.Option)
+            .WithMany()
+            .HasForeignKey(ao => ao.OptionId)
+            .OnDelete(DeleteBehavior.Restrict);
         
-        builder.Property(av => av.LanguageId) 
+        builder.Property(ao => ao.SelectedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+    }
+}
+
+public class AnswerTranslationConfiguration : IEntityTypeConfiguration<AnswerTranslation>
+{
+    public void Configure(EntityTypeBuilder<AnswerTranslation> builder)
+    {
+        builder.HasKey(t => t.Id);
+        builder.Property(t => t.Id).HasDefaultValueSql("uuid_generate_v4()");
+        
+        builder.Property(t => t.LanguageCode)
             .IsRequired()
             .HasMaxLength(10);
         
-        builder.HasOne(av => av.Answer)
-            .WithMany(a => a.Variants)
-            .HasForeignKey(av => av.AnswerId)
+        builder.Property(t => t.Value)
+            .IsRequired()
+            .HasMaxLength(AppConstants.MaxAnswerValueLength);
+        
+        builder.HasOne(t => t.Answer)
+            .WithMany(a => a.Translations)
+            .HasForeignKey(t => t.AnswerId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        builder.HasIndex(t => new { t.AnswerId, t.LanguageCode }).IsUnique();
     }
 }
