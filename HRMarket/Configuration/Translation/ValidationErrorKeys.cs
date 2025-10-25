@@ -26,6 +26,7 @@ public static class ValidationErrorKeys
     public const string InvalidOption = "validation.invalid_option";
     public const string MinSelections = "validation.min_selections";
     public const string MaxSelections = "validation.max_selections";
+    public const string SingleSelectMultipleOptions = "validation.single_select_multiple_options";
 
     // Firm validation
     public static class Firm

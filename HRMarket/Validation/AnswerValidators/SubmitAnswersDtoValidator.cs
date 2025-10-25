@@ -1,22 +1,24 @@
-﻿// HRMarket/Core/Answers/Validators/SubmitAnswersDtoValidator.cs
-
+﻿// HRMarket/Core/Answers/SubmitAnswersDtoValidator.cs
 using FluentValidation;
-using HRMarket.Core.Answers;
 
-namespace HRMarket.Validation.AnswerValidators;
+namespace HRMarket.Core.Answers;
 
 public class SubmitAnswersDtoValidator : AbstractValidator<SubmitAnswersDto>
 {
     public SubmitAnswersDtoValidator()
     {
+        RuleFor(x => x.FirmId)
+            .NotEmpty()
+            .WithMessage("FirmId is required");
+            
         RuleFor(x => x.CategoryId)
             .NotEmpty()
-            .WithMessage("Category ID is required");
-        
+            .WithMessage("CategoryId is required");
+            
         RuleFor(x => x.Answers)
-            .NotEmpty()
-            .WithMessage("At least one answer is required");
-        
+            .NotNull()
+            .WithMessage("Answers collection is required");
+            
         RuleForEach(x => x.Answers)
             .SetValidator(new SubmitAnswerDtoValidator());
     }
@@ -28,25 +30,9 @@ public class SubmitAnswerDtoValidator : AbstractValidator<SubmitAnswerDto>
     {
         RuleFor(x => x.QuestionId)
             .NotEmpty()
-            .WithMessage("Question ID is required");
-        
-        RuleFor(x => x.StructuredData)
-            .Must(BeValidJsonOrNull)
-            .When(x => !string.IsNullOrEmpty(x.StructuredData))
-            .WithMessage("Structured data must be valid JSON");
-    }
-    
-    private static bool BeValidJsonOrNull(string? json)
-    {
-        if (string.IsNullOrEmpty(json)) return true;
-        try
-        {
-            System.Text.Json.JsonDocument.Parse(json);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+            .WithMessage("QuestionId is required");
+            
+        // Note: Value and SelectedOptionIds validation is done at business logic level
+        // since it depends on question type and requirements
     }
 }

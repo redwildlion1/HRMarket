@@ -82,6 +82,7 @@ public class TranslationService : ITranslationService
             [ValidationErrorKeys.InvalidOption] = "Una sau mai multe opțiuni selectate sunt invalide",
             [ValidationErrorKeys.MinSelections] = "Trebuie să selectați cel puțin {0} opțiune/opțiuni",
             [ValidationErrorKeys.MaxSelections] = "Puteți selecta cel mult {0} opțiune/opțiuni",
+            [ValidationErrorKeys.SingleSelectMultipleOptions] = "Întrebările cu selecție unică nu pot avea mai multe opțiuni selectate",
 
             // Firm validation
             [ValidationErrorKeys.Firm.TypeInvalid] = "Tipul firmei nu este valid.",
@@ -181,9 +182,8 @@ public class TranslationService : ITranslationService
             [ValidationErrorKeys.InvalidOption] = "One or more selected options are invalid",
             [ValidationErrorKeys.MinSelections] = "You must select at least {0} option(s)",
             [ValidationErrorKeys.MaxSelections] = "You can select at most {0} option(s)",
+            [ValidationErrorKeys.SingleSelectMultipleOptions] = "Single-select questions cannot have multiple options selected",
             
-        
-
             // Firm validation
             [ValidationErrorKeys.Firm.TypeInvalid] = "The firm type is not valid.",
             [ValidationErrorKeys.Firm.CuiInvalid] = "The CUI must contain exactly 12 characters.",
