@@ -7,5 +7,13 @@ public enum FirmType
     Pfa,
     Ii,
     Ong,
+    Altele,
+    
+    // English equivalents
+    Llc,
+    Corp,
+    SoleProprietorship,
+    IndividualEnterprise,
+    NonProfitOrganization,
     Other
 }

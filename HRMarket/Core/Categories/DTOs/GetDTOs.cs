@@ -1,11 +1,42 @@
 namespace HRMarket.Core.Categories.DTOs;
 
-public record GetCategoryDto(Guid Id, string Name, string Icon, int? OrderInCluster, Guid? ClusterId);
-public record GetServiceDto(Guid Id, string Name, int OrderInCategory, Guid CategoryId);
-public record GetClusterDto(Guid Id, string Name, int OrderInList, string Icon);
-public record FullClusterDto(Guid Id, string Name, int OrderInList, string Icon, 
+public record GetCategoryDto(
+    Guid Id, 
+    string Name, 
+    string? Description,
+    string Icon, 
+    int? OrderInCluster, 
+    Guid? ClusterId);
+
+public record GetServiceDto(
+    Guid Id, 
+    string Name, 
+    string? Description,
+    int OrderInCategory, 
+    Guid CategoryId);
+
+public record GetClusterDto(
+    Guid Id, 
+    string Name, 
+    string? Description,
+    int OrderInList, 
+    string Icon,
+    bool IsActive);
+
+public record FullClusterDto(
+    Guid Id, 
+    string Name, 
+    string? Description,
+    int OrderInList, 
+    string Icon,
+    bool IsActive,
     ICollection<GetCategoryWithServicesDto> Categories);
     
-public record GetCategoryWithServicesDto(Guid Id, string Name, string Icon, int? OrderInCluster, Guid? ClusterId,
+public record GetCategoryWithServicesDto(
+    Guid Id, 
+    string Name, 
+    string? Description,
+    string Icon, 
+    int? OrderInCluster, 
+    Guid? ClusterId,
     ICollection<GetServiceDto> Services);
-    

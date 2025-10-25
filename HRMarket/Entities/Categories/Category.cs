@@ -1,4 +1,4 @@
-using HRMarket.Entities.Firms;
+using HRMarket.Entities.Categories.Translations;
 using HRMarket.Entities.Questions;
 
 namespace HRMarket.Entities.Categories;
@@ -14,7 +14,7 @@ public class Category
     public Guid? ClusterId { get; set; }
     public Cluster? Cluster { get; set; } 
     
+    public List<CategoryTranslation> Translations { get; set; } = [];
     public List<Service> Services { get; set; } = [];
     public List<Question> Questions { get; set; } = [];
-    public List<Firm>? Firms { get; set; } = [];
 }

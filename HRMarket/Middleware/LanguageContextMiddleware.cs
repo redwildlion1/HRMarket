@@ -1,5 +1,4 @@
-﻿// HRMarket/Middleware/LanguageContextMiddleware.cs
-using HRMarket.Configuration.Translation;
+﻿using HRMarket.Configuration.Translation;
 
 namespace HRMarket.Middleware;
 

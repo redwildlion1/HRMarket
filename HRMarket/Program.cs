@@ -296,7 +296,7 @@ app.UseSwaggerUI(c =>
 app.UseHttpsRedirection();
 
 // Language extraction BEFORE authentication
-app.UseLanguageExtraction();
+app.UseRequestLocalization();
 
 app.UseAuthentication();
 app.UseAuthorization();

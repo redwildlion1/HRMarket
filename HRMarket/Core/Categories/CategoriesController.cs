@@ -1,59 +1,92 @@
+using FluentValidation;
+using HRMarket.Configuration.Translation;
 using HRMarket.Core.Categories.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HRMarket.Core.Categories;
 
 [ApiController]
 [Route("api/categories")]
-public class CategoriesController(ICategoryService service) : ControllerBase
+public class CategoriesController(
+    ICategoryService service,
+    ILanguageContext languageContext) : ControllerBase
 {
     [HttpPost("clusters")]
-    public async Task<IActionResult> CreateCluster(PostClusterDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateCluster([FromBody] PostClusterDto dto)
     {
         await service.CreateCluster(dto);
-        return Ok();
+        return Ok(new { message = "Cluster created successfully" });
     }
     
     [HttpPost("categories")]
-    public async Task<IActionResult> CreateCategory(PostCategoryDto inClusterDto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateCategory([FromBody] PostCategoryDto dto)
     {
-        await service.CreateCategory(inClusterDto);
-        return Ok();
+        await service.CreateCategory(dto);
+        return Ok(new { message = "Category created successfully" });
     }
 
     [HttpPost("services")]
-    public async Task<IActionResult> CreateService(PostServiceDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> CreateService([FromBody] PostServiceDto dto)
     {
         await service.CreateService(dto);
-        return Ok();
+        return Ok(new { message = "Service created successfully" });
     }
-    
-    [HttpPost("categories/nocluster")]
-    public async Task<IActionResult> CreateCategoryWithoutCluster(PostCategoryDto dto)
+
+    [HttpPut("clusters/{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateCluster([FromRoute] Guid id, [FromBody] UpdateClusterDto dto)
     {
-        await service.CreateCategory(dto);
-        return Ok();
+        if (id != dto.Id)
+            return BadRequest(new { message = "ID mismatch" });
+        await service.UpdateCluster(dto);
+        return Ok(new { message = "Cluster updated successfully" });
     }
-    
-    [HttpGet("categories/nocluster")]
-    public async Task<IActionResult> GetCategoriesWithoutCluster()
+
+    [HttpPut("categories/{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateCategory([FromRoute] Guid id, [FromBody] UpdateCategoryDto dto)
     {
-        await service.GetCategoriesWithoutCluster();
-        return Ok();
+        if (id != dto.Id)
+            return BadRequest(new { message = "ID mismatch" });
+
+        await service.UpdateCategory(dto);
+        return Ok(new { message = "Category updated successfully" });
+    }
+
+    [HttpPut("services/{id:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateService([FromRoute] Guid id, [FromBody] UpdateServiceDto dto)
+    {
+        if (id != dto.Id)
+            return BadRequest(new { message = "ID mismatch" });
+
+        await service.UpdateService(dto);
+        return Ok(new { message = "Service updated successfully" });
     }
     
     [HttpPost("addCategoryToCluster")]
-    public async Task<IActionResult> AddCategoryToCluster(AddCategoryToClusterDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> AddCategoryToCluster([FromBody] AddCategoryToClusterDto dto)
     {
         await service.AddCategoryToCluster(dto);
-        return Ok();
+        return Ok(new { message = "Category added to cluster successfully" });
     }
     
     [HttpGet("clusters")]
     public async Task<IActionResult> GetFullClusters()
     {
-        await service.GetFullClusters();
-        return Ok();
+        var clusters = await service.GetFullClusters(languageContext.Language);
+        return Ok(clusters);
     }
     
+    [HttpGet("categories/nocluster")]
+    public async Task<IActionResult> GetCategoriesWithoutCluster()
+    {
+        var categories = await service.GetCategoriesWithoutCluster(languageContext.Language);
+        return Ok(categories);
+    }
 }

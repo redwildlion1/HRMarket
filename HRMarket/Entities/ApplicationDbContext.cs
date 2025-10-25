@@ -1,4 +1,6 @@
 using HRMarket.Entities.Auth;
+using HRMarket.Entities.Categories;
+using HRMarket.Entities.Categories.Translations;
 using HRMarket.Entities.LocationElements;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -28,6 +30,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Categories.Category> Categories { get; set; }
     public DbSet<Categories.Cluster> Clusters { get; set; }
     public DbSet<Categories.Service> Services { get; set; }
+    public DbSet<CategoryTranslation> CategoryTranslations { get; set; }
+    public DbSet<ClusterTranslation> ClusterTranslations { get; set; }
+    public DbSet<ServiceTranslation> ServiceTranslations { get; set; }
     public DbSet<Country> Countries { get; set; }
     public DbSet<County> Counties { get; set; }
 
@@ -66,6 +71,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.ApplyConfiguration(new Categories.CategoryConfiguration());
         modelBuilder.ApplyConfiguration(new Categories.ClusterConfiguration()); 
         modelBuilder.ApplyConfiguration(new Categories.ServiceConfiguration());
+        
+        modelBuilder.ApplyConfiguration(new CategoryTranslationConfiguration());
+        modelBuilder.ApplyConfiguration(new ClusterTranslationConfiguration());
+        modelBuilder.ApplyConfiguration(new ServiceTranslationConfiguration());
         
         // Apply configurations for location entities
         modelBuilder.ApplyConfiguration(new CountryConfiguration());
