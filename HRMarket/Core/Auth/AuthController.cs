@@ -20,7 +20,7 @@ public class AuthController(
     public async Task<IActionResult> Register([FromBody]RegisterDto dto)
     {
         await authService.Register(dto);
-        return Ok(new { message = "Registration successful. Please check your email to confirm your account." });
+        return Ok();
     }
 
     [HttpPost("login")]
@@ -42,7 +42,7 @@ public class AuthController(
     {
         var confirmEmailRequest = new ConfirmEmailRequest(userId, token);
         await authService.ConfirmEmail(confirmEmailRequest);
-        return Ok(new { message = "Email confirmed successfully" });
+        return Ok();
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ public class AuthController(
         try
         {
             // Get token from header
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "").Trim();
+            var token = Request.Headers.Authorization.ToString().Replace("Bearer ", "").Trim();
             
             if (string.IsNullOrEmpty(token))
             {
@@ -64,13 +64,13 @@ public class AuthController(
             
             // Get token expiration from claims
             var expClaim = User.FindFirst("exp")?.Value;
-            if (expClaim != null && long.TryParse(expClaim, out var exp))
-            {
-                var expiresAt = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
-                await tokenBlacklist.BlacklistTokenAsync(token, expiresAt);
+            if (expClaim == null || !long.TryParse(expClaim, out var exp))
+                return Ok(new { message = "Logged out successfully" });
+            
+            var expiresAt = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
+            await tokenBlacklist.BlacklistTokenAsync(token, expiresAt);
                 
-                logger.LogInformation("User logged out successfully");
-            }
+            logger.LogInformation("User logged out successfully");
 
             return Ok(new { message = "Logged out successfully" });
         }

@@ -1,4 +1,5 @@
 using HRMarket.Configuration;
+using HRMarket.Configuration.Status;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -48,6 +49,23 @@ public class FirmConfiguration : IEntityTypeConfiguration<Firm>
            
         builder.Property(f => f.Description)
             .HasMaxLength(AppConstants.MaxDescriptionLength);
+        
+        builder.Property(f => f.Status)
+            .IsRequired()
+            .HasDefaultValue(FirmStatus.Draft);
+        
+        builder.Property(f => f.SubmittedForReviewAt);
+        
+        builder.Property(f => f.ReviewedAt);
+        
+        builder.Property(f => f.ReviewedByUserId);
+        
+        builder.Property(f => f.RejectionReason)
+            .HasMaxLength(1000);
+        
+        builder.Property(f => f.RejectionReasonType);
+        
+        builder.HasIndex(f => f.Status);
     }
 }
 

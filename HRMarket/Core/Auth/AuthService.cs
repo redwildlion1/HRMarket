@@ -18,6 +18,7 @@ public interface IAuthService
     Task<LoginResult> RefreshToken(RefreshTokenRequest request);
     Task ConfirmEmail(ConfirmEmailRequest request);
     Task<UserInfoDto> GetUserInfo(Guid userId);
+    Task<User> GetUserById(Guid userId);
     Task<bool> IsUserAdmin(Guid userId);
 }
 
@@ -191,6 +192,17 @@ public class AuthService(
         await redis.SetAsync(cacheKey, userInfo, UserInfoCacheDuration);
 
         return userInfo;
+    }
+
+    public async Task<User> GetUserById(Guid userId)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            translationService.ThrowAuthError(languageContext, "userId", ValidationErrorKeys.Auth.UserNotFound);
+        }
+
+        return user!;
     }
 
     public async Task<bool> IsUserAdmin(Guid userId)

@@ -27,6 +27,26 @@ public class FirmController(
             return StatusCode(500, new { message = "An error occurred while creating the firm" });
         }
     }
+    
+    /// <summary>
+    /// Submit firm for admin review
+    /// Can only be done after both logo and cover are uploaded
+    /// </summary>
+    [HttpPost("{firmId:guid}/submit-for-review")]
+    [Authorize]
+    public async Task<IActionResult> SubmitForReview([FromRoute] Guid firmId)
+    {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(new { message = "Invalid user credentials" });
+            }
+
+            await service.SubmitFirmForReviewAsync(firmId, userId);
+        
+            return Ok(new { message = "Firm submitted for review successfully" });
+    }
 
     /// <summary>
     /// Check if the current user can edit the specified firm
@@ -40,34 +60,10 @@ public class FirmController(
             
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized(new { message = "Invalid user credentials" });
+                return Unauthorized();
             }
 
             var result = await authorizationService.CanUserEditFirm(userId, firmId);
             return Ok(result);
-    }
-
-    /// <summary>
-    /// Get the firm ID associated with the current user
-    /// </summary>
-    [HttpGet("my-firm")]
-    [Authorize]
-    public async Task<IActionResult> GetMyFirm()
-    {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            {
-                return Unauthorized(new { message = "Invalid user credentials" });
-            }
-
-            var firmId = await authorizationService.GetUserFirmId(userId);
-            
-            if (firmId == null)
-            {
-                return NotFound(new { message = "No firm associated with this user" });
-            }
-
-            return Ok(new { firmId });
     }
 }
