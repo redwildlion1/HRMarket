@@ -41,6 +41,7 @@ public class AuthService(
             Email = dto.Email,
             UserName = dto.Email,
             Newsletter = dto.Newsletter,
+            IsFirm = dto.IsFirm
         };
 
         var result = await userManager.CreateAsync(user, dto.Password);
@@ -50,7 +51,8 @@ public class AuthService(
         roleResult.ThrowIfFailed();
 
         var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
-        var confirmationLink = $"{configuration["AppSettings:FrontendUrl"]}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
+        var confirmationLink =
+            $"{configuration["AppSettings:FrontendUrl"]}/confirm-email?userId={user.Id}&token={Uri.EscapeDataString(token)}";
 
         await emailService.SendConfirmationEmail(user.Email, confirmationLink);
     }
@@ -73,7 +75,7 @@ public class AuthService(
 
         // Get the firm if it exists for token generation
         Entities.Firms.Firm? firm = null;
-        if (userInfo.HasFirm && userInfo.FirmId.HasValue)
+        if (userInfo is { HasFirm: true, FirmId: not null })
         {
             firm = await context.Firms.FindAsync(userInfo.FirmId.Value);
         }
@@ -82,9 +84,9 @@ public class AuthService(
         var refreshToken = await tokenService.GenerateRefreshToken(user.Id);
 
         return new LoginResult(
-            jwtToken.Value, 
-            refreshToken.Value, 
-            jwtToken.Expires, 
+            jwtToken.Value,
+            refreshToken.Value,
+            jwtToken.Expires,
             refreshToken.Expires,
             userInfo);
     }
@@ -108,7 +110,8 @@ public class AuthService(
 
         if (!await tokenService.IsRefreshTokenValidAsync(user!.Id, request.RefreshToken))
         {
-            translationService.ThrowAuthError(languageContext, "refreshToken", ValidationErrorKeys.Auth.InvalidRefreshToken);
+            translationService.ThrowAuthError(languageContext, "refreshToken",
+                ValidationErrorKeys.Auth.InvalidRefreshToken);
         }
 
         // Get updated user info
@@ -127,9 +130,9 @@ public class AuthService(
         await tokenService.InvalidateRefreshTokenAsync(user.Id, request.RefreshToken);
 
         return new LoginResult(
-            newJwtToken.Value, 
-            newRefreshToken.Value, 
-            newJwtToken.Expires, 
+            newJwtToken.Value,
+            newRefreshToken.Value,
+            newJwtToken.Expires,
             newRefreshToken.Expires,
             userInfo);
     }
@@ -144,7 +147,7 @@ public class AuthService(
 
         var result = await userManager.ConfirmEmailAsync(user!, request.Token);
         result.ThrowIfFailed();
-        
+
         // Invalidate user info cache after email confirmation
         await redis.DeleteAsync(CacheKeys.Users.Info(request.UserId));
     }
@@ -204,10 +207,10 @@ public class AuthService(
         if (user == null) return false;
 
         var roles = await userManager.GetRolesAsync(user);
-        
+
         // Cache roles
         await redis.SetAsync(cacheKey, roles.ToList(), UserInfoCacheDuration);
-        
+
         return roles.Contains("Admin");
     }
 }

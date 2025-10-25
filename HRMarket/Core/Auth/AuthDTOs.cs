@@ -5,6 +5,7 @@ public class RegisterDto(string email, string password, bool newsletter) : BaseD
     public string Email { get; set; } = email;
     public string Password { get; set; } = password;
     public bool Newsletter { get; set; } = newsletter;
+    public bool IsFirm { get; set;  }= false;
 }
 
 public class LoginResult(

@@ -36,8 +36,6 @@ public class FirmController(
     [Authorize]
     public async Task<IActionResult> CheckFirmAccess([FromRoute] Guid firmId)
     {
-        try
-        {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
@@ -47,12 +45,6 @@ public class FirmController(
 
             var result = await authorizationService.CanUserEditFirm(userId, firmId);
             return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error checking firm access for firm: {FirmId}", firmId);
-            return StatusCode(500, new { message = "An error occurred while checking firm access" });
-        }
     }
 
     /// <summary>
@@ -62,8 +54,6 @@ public class FirmController(
     [Authorize]
     public async Task<IActionResult> GetMyFirm()
     {
-        try
-        {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
@@ -79,11 +69,5 @@ public class FirmController(
             }
 
             return Ok(new { firmId });
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error getting user firm");
-            return StatusCode(500, new { message = "An error occurred while getting user firm" });
-        }
     }
 }
